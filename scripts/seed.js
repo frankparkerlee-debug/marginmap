@@ -4,22 +4,30 @@ const { run, get } = require('../db');
 
 (async () => {
   try {
-    const email = (process.env.ADMIN_EMAIL || 'admin@marginmap.local').toLowerCase();
-    const password = process.env.ADMIN_PASSWORD || 'Margin123!';
-    const role = 'admin';
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@marginmap.local').toLowerCase();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Margin123!';
 
-    const existing = await get('SELECT id FROM users WHERE email = ?', [email]);
-    if (existing) {
-      console.log(`Admin user ${email} already exists (id ${existing.id}).`);
-      process.exit(0);
+    const usersToSeed = [
+      { email: adminEmail, password: adminPassword, role: 'admin', label: 'admin' },
+      { email: 'parker@senecawest.com', password: 'Password321', role: 'analyst', label: 'requested analyst' }
+    ];
+
+    for (const user of usersToSeed) {
+      const existing = await get('SELECT id FROM users WHERE email = ?', [user.email]);
+      if (existing) {
+        console.log(`User ${user.email} already exists (id ${existing.id}).`);
+        continue;
+      }
+
+      const hash = await bcrypt.hash(user.password, 10);
+      const result = await run(
+        'INSERT INTO users (email, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, datetime("now"), datetime("now"))',
+        [user.email, hash, user.role]
+      );
+      console.log(`Seeded ${user.label} user ${user.email} (password: ${user.password}) with id ${result.id}`);
     }
 
-    const hash = await bcrypt.hash(password, 10);
-    const result = await run(
-      'INSERT INTO users (email, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, datetime("now"), datetime("now"))',
-      [email, hash, role]
-    );
-    console.log(`Seeded admin user ${email} (password: ${password}) with id ${result.id}`);
+    console.log('Seeding complete.');
     process.exit(0);
   } catch (err) {
     console.error('Seed failed:', err);

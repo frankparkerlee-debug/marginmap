@@ -21,7 +21,7 @@ app.use('/api/actions', authenticate, require('./api/actions'));
 app.use(express.static(webDir));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(webDir, 'login.html'));
+  res.sendFile(path.join(webDir, 'home.html'));
 });
 
 app.use((err, req, res, next) => {

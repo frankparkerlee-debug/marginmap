@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MarginMap | Pricing Intelligence for Healthcare Suppliers</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+    }
+    body {
+      background: #f8f7f3;
+      color: #0f172a;
+      font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    }
+    .grain {
+      position: absolute;
+      inset: 0;
+      background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+      opacity: 0.15;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="relative min-h-screen overflow-x-hidden">
+  <div class="grain"></div>
+  <header class="relative z-10">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-8">
+      <div class="flex items-center gap-3">
+        <div class="h-12 w-12 bg-black text-white flex items-center justify-center text-2xl font-semibold tracking-tight border-2 border-slate-900">M</div>
+        <div>
+          <p class="text-xl font-semibold tracking-tight text-slate-900">MarginMap</p>
+          <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Commercial Margin Control</p>
+        </div>
+      </div>
+      <nav class="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
+        <a href="#platform" class="hover:text-black transition">Platform</a>
+        <a href="#dashboards" class="hover:text-black transition">Dashboards</a>
+        <a href="#actions" class="hover:text-black transition">Actions</a>
+        <a href="#compliance" class="hover:text-black transition">Compliance</a>
+      </nav>
+      <div class="flex items-center gap-3">
+        <a href="/login.html" class="rounded-none border border-slate-900 px-4 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-slate-900 transition hover:bg-slate-900 hover:text-white">Login</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative z-10">
+    <section class="mx-auto max-w-6xl px-6 pb-20 pt-12 md:pt-24">
+      <div class="grid gap-10 md:grid-cols-[60%_auto] md:items-start">
+        <div>
+          <p class="text-xs uppercase tracking-[0.45em] text-slate-500">Healthcare Supplier Performance</p>
+          <h1 class="mt-6 text-4xl font-semibold leading-[1.05] text-slate-900 md:text-6xl">
+            Brutally precise margin intelligence for wound care, DME, and outsourced services.
+          </h1>
+          <p class="mt-6 text-lg leading-relaxed text-slate-600 md:max-w-xl">
+            MarginMap ingests invoice and claim-level data, benchmarks realized price versus cost, and tells your finance, sales, and revenue cycle teams exactly where to recover profit—no hand waving, just quantified actions.
+          </p>
+          <div class="mt-10 flex flex-wrap gap-4">
+            <a href="/login.html" class="rounded-none bg-black px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white hover:text-black hover:outline hover:outline-2 hover:outline-black">Enter Platform</a>
+            <a href="#platform" class="rounded-none border-2 border-black px-6 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-black hover:text-white">View Stack</a>
+          </div>
+          <div class="mt-12 grid gap-6 md:grid-cols-3">
+            <div class="border border-slate-300 bg-white p-5 shadow-[5px_5px_0_0_#0f172a]">
+              <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Leakage</p>
+              <p class="mt-2 text-2xl font-semibold text-slate-900">$42.6M</p>
+              <p class="mt-2 text-sm text-slate-500">Leakage identified across active tenants in the past 90 days.</p>
+            </div>
+            <div class="border border-slate-300 bg-white p-5 shadow-[5px_5px_0_0_#0f172a]">
+              <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Recommendations</p>
+              <p class="mt-2 text-2xl font-semibold text-slate-900">1,248</p>
+              <p class="mt-2 text-sm text-slate-500">Ranked commercial actions approved by CFOs &amp; revenue cycle leads.</p>
+            </div>
+            <div class="border border-slate-300 bg-white p-5 shadow-[5px_5px_0_0_#0f172a]">
+              <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Turnaround</p>
+              <p class="mt-2 text-2xl font-semibold text-slate-900">72 hrs</p>
+              <p class="mt-2 text-sm text-slate-500">Time from data ingest to board-ready margin recovery plan.</p>
+            </div>
+          </div>
+        </div>
+        <div class="relative mt-10 md:mt-0">
+          <div class="absolute -left-8 -top-6 hidden h-16 w-16 border-4 border-black bg-white md:block"></div>
+          <div class="absolute -right-10 -bottom-8 hidden h-24 w-24 border-4 border-black bg-teal-200 md:block"></div>
+          <div class="relative border border-slate-900 bg-white p-6 shadow-[10px_10px_0_0_#0f172a]">
+            <div class="space-y-4">
+              <p class="text-xs uppercase tracking-[0.4em] text-slate-500">Margin Snapshot</p>
+              <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="border border-slate-200 p-4">
+                  <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Realized Margin</p>
+                  <p class="mt-2 text-2xl font-semibold text-slate-900">58.1%</p>
+                </div>
+                <div class="border border-slate-200 p-4">
+                  <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Target Margin</p>
+                  <p class="mt-2 text-2xl font-semibold text-slate-900">62.0%</p>
+                </div>
+                <div class="border border-slate-200 p-4">
+                  <p class="text-xs uppercase tracking-[0.3em] text-slate-400">SKU A100</p>
+                  <p class="mt-2 text-lg font-semibold text-slate-900">+12% uplift</p>
+                </div>
+                <div class="border border-slate-200 p-4">
+                  <p class="text-xs uppercase tracking-[0.3em] text-slate-400">Sunrise Clinic</p>
+                  <p class="mt-2 text-lg font-semibold text-slate-900">$2.7K leakage</p>
+                </div>
+              </div>
+              <div class="border border-slate-200 bg-slate-50 p-4">
+                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Next Action</p>
+                <p class="mt-3 text-base font-semibold text-slate-900">Renegotiate Medicare NW Region contract on CPT 15275 to recover $14.2K this quarter.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="platform" class="border-y border-slate-900 bg-white py-16">
+      <div class="mx-auto max-w-6xl px-6">
+        <div class="flex flex-col gap-12 md:flex-row md:items-start md:justify-between">
+          <h2 class="text-3xl font-semibold text-slate-900 md:max-w-sm">All the instrumentation finance and commercial teams need, in one brutalist cockpit.</h2>
+          <div class="grid gap-6 md:max-w-2xl">
+            <div class="border border-slate-300 bg-white p-5 shadow-[5px_5px_0_0_#0f172a]">
+              <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Data Ingest</p>
+              <p class="mt-3 text-lg font-semibold text-slate-900">Upload any CSV/XLSX with invoice or claim detail. We normalize headers, retain raw files, and seed your analytics in minutes.</p>
+            </div>
+            <div class="border border-slate-300 bg-white p-5 shadow-[5px_5px_0_0_#0f172a]">
+              <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Executive Dashboard</p>
+              <p class="mt-3 text-lg font-semibold text-slate-900">Board deck clarity: revenue, COGS, realized margin, leakage, worst customers/SKUs, and trending margin lines.</p>
+            </div>
+            <div class="border border-slate-300 bg-white p-5 shadow-[5px_5px_0_0_#0f172a]">
+              <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Recovery Engine</p>
+              <p class="mt-3 text-lg font-semibold text-slate-900">AI-guided recommendations quantify each move—price lifts, payer escalations, customer resets—ranked by dollar impact.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="dashboards" class="bg-slate-100 py-16">
+      <div class="mx-auto max-w-6xl px-6">
+        <div class="grid gap-10 md:grid-cols-2">
+          <div class="border border-slate-300 bg-white p-6 shadow-[7px_7px_0_0_#0f172a]">
+            <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Dashboards</p>
+            <h3 class="mt-3 text-2xl font-semibold text-slate-900">Finance, sales, and revenue cycle leaders share one command center.</h3>
+            <ul class="mt-6 space-y-4 text-sm leading-relaxed text-slate-600">
+              <li><span class="font-semibold text-slate-900">Owner/CFO:</span> Total profit, leakage, lagging customers, and YoY trend.</li>
+              <li><span class="font-semibold text-slate-900">Sales Ops:</span> Clinic and physician underpricing, SKU drill-downs, immediate price moves.</li>
+              <li><span class="font-semibold text-slate-900">RevCycle:</span> Payer reimbursement variance, denials, and contract compliance watchlists.</li>
+            </ul>
+          </div>
+          <div class="border border-slate-300 bg-slate-900 p-6 text-white shadow-[7px_7px_0_0_#0f172a]">
+            <p class="text-xs uppercase tracking-[0.35em] text-white/60">AI Actions</p>
+            <h3 class="mt-3 text-2xl font-semibold">Dollar-ranked recovery plan, always current.</h3>
+            <p class="mt-4 text-sm text-white/80">
+              Every recommendation is built from hard data—outlier price comparisons, payer underperformance, and SKU margins against target. No fluff, just immediate commercial action to recover profit.
+            </p>
+            <div class="mt-6 space-y-3 text-sm">
+              <div class="border border-white/40 bg-white/10 p-4">
+                <p class="text-xs uppercase tracking-[0.35em] text-white/70">Sunrise Wound Clinic</p>
+                <p class="mt-1 text-base font-semibold text-white">Lift SKU A100 realized price by 12% to recover $2,960 this month.</p>
+              </div>
+              <div class="border border-white/40 bg-white/10 p-4">
+                <p class="text-xs uppercase tracking-[0.35em] text-white/70">Medicare NW Region</p>
+                <p class="mt-1 text-base font-semibold text-white">CPT 15275 paying 28% below national average—escalate for $14,200 uplift.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="actions" class="border-t border-slate-900 bg-white py-16">
+      <div class="mx-auto max-w-6xl px-6">
+        <div class="grid gap-12 md:grid-cols-[55%_auto] md:items-center">
+          <div>
+            <p class="text-xs uppercase tracking-[0.35em] text-slate-500">Workflow</p>
+            <h3 class="mt-4 text-3xl font-semibold text-slate-900">Upload. Analyze. Recover.</h3>
+            <ol class="mt-6 space-y-4 text-sm leading-relaxed text-slate-600">
+              <li><span class="font-semibold text-slate-900">Upload data:</span> Drag and drop CSV/XLSX from ERP, billing, or rev-cycle systems.</li>
+              <li><span class="font-semibold text-slate-900">Validate instantly:</span> We normalize headers, highlight gaps, and store originals.</li>
+              <li><span class="font-semibold text-slate-900">Review dashboards:</span> Track revenue, margin, leakage, worst performers.</li>
+              <li><span class="font-semibold text-slate-900">Action feed:</span> Execute dollar-ranked recovery tasks and capture audit notes.</li>
+              <li><span class="font-semibold text-slate-900">Export for compliance:</span> CSV trail of notifications, payer escalations, and internal approvals.</li>
+            </ol>
+          </div>
+          <div class="border border-slate-900 bg-slate-100 p-6 text-sm shadow-[8px_8px_0_0_#0f172a]">
+            <p class="text-xs uppercase tracking-[0.35em] text-slate-600">Login to operate</p>
+            <p class="mt-4 text-lg font-semibold text-slate-900">Already have access?</p>
+            <p class="mt-2 text-slate-600">Use your credentials to enter the MarginMap cockpit and start recovering margin today.</p>
+            <a href="/login.html" class="mt-6 inline-block rounded-none border-2 border-slate-900 px-5 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-slate-900 transition hover:bg-slate-900 hover:text-white">Launch Login</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="compliance" class="bg-slate-900 py-14 text-white">
+      <div class="mx-auto max-w-6xl px-6">
+        <div class="grid gap-10 md:grid-cols-[55%_auto] md:items-start">
+          <div>
+            <p class="text-xs uppercase tracking-[0.4em] text-white/60">Compliance &amp; Negotiation</p>
+            <h3 class="mt-4 text-3xl font-semibold">Maintain a defensible trail for payers, auditors, and equity partners.</h3>
+            <p class="mt-6 text-sm text-white/80">
+              Every recommendation, alert, and resolution is timestamped. Export CSV audit reports showcasing when revenue teams surfaced under-reimbursement, when finance approved pricing updates, and how leakage was closed.
+            </p>
+          </div>
+          <div class="border border-white/40 bg-white/10 p-6 text-sm">
+            <p class="text-xs uppercase tracking-[0.35em] text-white/70">Audit Export</p>
+            <p class="mt-3 font-semibold text-white">“We notified ourselves of payer underpricing on April 12, 2024.”</p>
+            <p class="mt-3 text-white/70">Keep regulators satisfied and negotiations anchored in data.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="relative z-10 border-t border-slate-900 bg-white py-10">
+    <div class="mx-auto flex max-w-6xl flex-col gap-4 px-6 text-xs uppercase tracking-[0.35em] text-slate-500 md:flex-row md:items-center md:justify-between">
+      <p>MarginMap © <span id="footerYear"></span>. Financial analytics for healthcare suppliers.</p>
+      <a href="/login.html" class="text-slate-600 hover:text-black transition">Secure Login</a>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('footerYear').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
