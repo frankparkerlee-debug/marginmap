@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: collagendirect1
+    env: node
+    plan: starter
+    branch: main
+    buildCommand: "npm install"
+    startCommand: "npm run start:render"
+    disk:
+      name: marginmap-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SQLITE_FILE
+        value: /var/data/marginmap.db

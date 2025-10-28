@@ -1,9 +1,12 @@
 const path = require('path');
+const fs = require('fs');
 const sqlite3 = require('sqlite3').verbose();
 
 const dbFile = process.env.SQLITE_FILE
   ? path.resolve(process.cwd(), process.env.SQLITE_FILE)
   : path.join(__dirname, 'marginmap.db');
+
+fs.mkdirSync(path.dirname(dbFile), { recursive: true });
 
 const db = new sqlite3.Database(dbFile);
 
