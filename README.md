@@ -70,7 +70,7 @@ marginmap/
 Log in at `http://localhost:3000/login.html` using the seeded credentials.
 
 ## Deploying to Render
-This repository includes a `render.yaml` describing a Render Web Service named `collagendirect1`. Key points:
+This repository includes a `render.yaml` describing a Render Web Service named `marginmap1`. Key points:
 
 1. Push the repo to GitHub (already done).
 2. In Render, choose **New → Blueprint Deployment**, point to this repo, and Render will create the service defined in `render.yaml`.
@@ -82,7 +82,7 @@ This repository includes a `render.yaml` describing a Render Web Service named `
    - `COMPANY_NAME`: label shown in the UI
    - `DEFAULT_MARGIN_TARGET`: e.g. `0.6`
 5. Redeploy; the `start:render` script runs migrations and seeds the admin account on each boot.
-6. Access the live app at `https://collagendirect1.onrender.com/login.html`.
+6. Access the live app at `https://marginmap1.onrender.com/login.html`.
 
 ## Environment Variables
 - `PORT` – API + UI port (default 3000)

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: collagendirect1
+    name: marginmap1
     env: node
     plan: starter
     branch: main
