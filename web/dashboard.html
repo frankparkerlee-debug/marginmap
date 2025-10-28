@@ -2,118 +2,162 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MarginMap Dashboard</title>
+  <title>MarginMap | Executive Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #f5f3ef;
+      color: #0f172a;
+      font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    }
+    .grain {
+      position: fixed;
+      inset: 0;
+      background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+      opacity: 0.2;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+    }
+    .card-shadow {
+      box-shadow: 8px 8px 0 #0f172a;
+    }
+  </style>
 </head>
-<body data-page="dashboard" class="bg-slate-100 min-h-screen flex">
-  <aside class="w-64 bg-slate-900 text-slate-100 flex flex-col">
-    <div class="px-6 py-6 text-2xl font-semibold tracking-tight">MarginMap</div>
-    <nav class="flex-1 px-4 space-y-2">
-      <a data-nav="home" href="/home.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800 transition">Home</a>
-      <a data-nav="dashboard" href="/dashboard.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800 transition">Dashboard</a>
-      <a data-nav="sku" href="/sku.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800 transition">SKU Explorer</a>
-      <a data-nav="customers" href="/customers.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800 transition">Customers</a>
-      <a data-nav="actions" href="/actions.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800 transition">Recommendations</a>
-      <a data-nav="upload" href="/upload.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:bg-slate-800 transition">Data Upload</a>
-    </nav>
-    <div class="px-4 py-4">
-      <button id="logoutBtn" class="w-full px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition text-sm font-medium">Sign Out</button>
+<body data-page="dashboard" class="relative min-h-screen overflow-x-hidden">
+  <div class="grain"></div>
+  <header class="relative z-20 border-b border-slate-900 bg-white/90 backdrop-blur">
+    <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
+      <a href="/home.html" class="flex items-center gap-3">
+        <div class="flex h-12 w-12 items-center justify-center border-2 border-slate-900 bg-black text-2xl font-semibold text-white">M</div>
+        <div>
+          <p class="text-xl font-semibold tracking-tight text-slate-900">MarginMap</p>
+          <p class="text-[10px] uppercase tracking-[0.45em] text-slate-500">Margin Command Center</p>
+        </div>
+      </a>
+      <nav class="flex items-center gap-6 text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">
+        <a data-nav="home" href="/home.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Home</a>
+        <a data-nav="dashboard" href="/dashboard.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Dashboard</a>
+        <a data-nav="sku" href="/sku.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">SKU Explorer</a>
+        <a data-nav="customers" href="/customers.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Customers</a>
+        <a data-nav="actions" href="/actions.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Actions</a>
+        <a data-nav="upload" href="/upload.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Upload</a>
+      </nav>
     </div>
-  </aside>
-  <div class="flex-1 flex flex-col">
-    <header class="h-20 border-b border-slate-200 bg-white px-8 flex items-center justify-between">
-      <div>
-        <p class="text-xs uppercase text-slate-500 tracking-wide">Company</p>
-        <h1 id="companyName" class="text-xl font-semibold text-slate-900">MarginMap Client</h1>
-      </div>
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-slate-500">Start</label>
-          <input type="date" id="startDate" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:ring-teal-500">
-        </div>
-        <div class="flex items-center gap-2">
-          <label class="text-sm text-slate-500">End</label>
-          <input type="date" id="endDate" class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:ring-teal-500">
-        </div>
-        <button id="refreshDashboard" class="px-4 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition">Refresh</button>
-      </div>
-    </header>
-    <main class="p-8 space-y-8 overflow-y-auto">
-      <section>
-        <h2 class="text-sm font-semibold text-slate-600 uppercase tracking-wide">Key Metrics</h2>
-        <div class="mt-4 grid gap-4 grid-cols-1 md:grid-cols-3 xl:grid-cols-5">
-          <div class="bg-white border border-slate-200 rounded-xl p-4">
-            <p class="text-xs uppercase text-slate-500 tracking-wide">Total Revenue</p>
-            <p id="kpiRevenue" class="text-2xl font-semibold text-slate-900 mt-2">$0</p>
-          </div>
-          <div class="bg-white border border-slate-200 rounded-xl p-4">
-            <p class="text-xs uppercase text-slate-500 tracking-wide">Total COGS</p>
-            <p id="kpiCogs" class="text-2xl font-semibold text-slate-900 mt-2">$0</p>
-          </div>
-          <div class="bg-white border border-slate-200 rounded-xl p-4">
-            <p class="text-xs uppercase text-slate-500 tracking-wide">Gross Margin</p>
-            <p id="kpiMargin" class="text-2xl font-semibold text-slate-900 mt-2">$0</p>
-          </div>
-          <div class="bg-white border border-slate-200 rounded-xl p-4">
-            <p class="text-xs uppercase text-slate-500 tracking-wide">Gross Margin %</p>
-            <p id="kpiMarginPct" class="text-2xl font-semibold text-teal-600 mt-2">0%</p>
-          </div>
-          <div class="bg-white border border-slate-200 rounded-xl p-4">
-            <p class="text-xs uppercase text-slate-500 tracking-wide">Margin Leakage</p>
-            <p id="kpiLeakage" class="text-2xl font-semibold text-red-600 mt-2">$0</p>
-          </div>
-        </div>
-      </section>
+  </header>
 
-      <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white border border-slate-200 rounded-xl p-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wide">Worst Customers</h3>
-            <span class="text-xs text-slate-400">Leakage focus</span>
+  <main class="relative z-10">
+    <section class="mx-auto max-w-6xl px-6 pt-16">
+      <div class="flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <p class="text-xs uppercase tracking-[0.45em] text-slate-500">Executive Overview</p>
+          <h1 class="mt-4 text-4xl font-semibold leading-tight md:text-5xl">Margin health for <span id="companyName" class="underline decoration-4 decoration-teal-400 underline-offset-4">MarginMap Client</span></h1>
+          <p class="mt-4 max-w-2xl text-sm text-slate-600">Monitor realized margin, identify leakage, and act on the five biggest commercial risks in real time.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.35em] text-slate-500">
+          <div class="flex items-center gap-2">
+            <span>From</span>
+            <input type="date" id="startDate" class="rounded-none border border-slate-900 bg-white px-3 py-2 font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
           </div>
-          <table class="w-full mt-3 text-sm">
-            <thead class="text-slate-500">
+          <div class="flex items-center gap-2">
+            <span>To</span>
+            <input type="date" id="endDate" class="rounded-none border border-slate-900 bg-white px-3 py-2 font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+          </div>
+          <button id="refreshDashboard" class="rounded-none border-2 border-slate-900 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.4em] text-slate-900 transition hover:bg-slate-900 hover:text-white">Refresh</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-6xl px-6 pt-10">
+      <div class="grid gap-6 md:grid-cols-5">
+        <div class="card-shadow border border-slate-900 bg-white p-5">
+          <p class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Revenue</p>
+          <p id="kpiRevenue" class="mt-3 text-2xl font-semibold text-slate-900">$0</p>
+        </div>
+        <div class="card-shadow border border-slate-900 bg-white p-5">
+          <p class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Cost of Goods</p>
+          <p id="kpiCogs" class="mt-3 text-2xl font-semibold text-slate-900">$0</p>
+        </div>
+        <div class="card-shadow border border-slate-900 bg-white p-5">
+          <p class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Gross Margin</p>
+          <p id="kpiMargin" class="mt-3 text-2xl font-semibold text-slate-900">$0</p>
+        </div>
+        <div class="card-shadow border border-slate-900 bg-white p-5">
+          <p class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Margin %</p>
+          <p id="kpiMarginPct" class="mt-3 text-2xl font-semibold text-teal-600">0%</p>
+        </div>
+        <div class="card-shadow border border-slate-900 bg-white p-5">
+          <p class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Leakage</p>
+          <p id="kpiLeakage" class="mt-3 text-2xl font-semibold text-red-600">$0</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mx-auto max-w-6xl px-6 pt-14">
+      <div class="grid gap-8 lg:grid-cols-2">
+        <div class="card-shadow border border-slate-900 bg-white p-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-slate-900">Customers Driving Leakage</h2>
+            <span class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Finance Watchlist</span>
+          </div>
+          <table class="mt-6 w-full text-sm">
+            <thead class="text-left text-xs uppercase tracking-[0.3em] text-slate-400">
               <tr>
-                <th class="text-left py-2">Customer</th>
-                <th class="text-right py-2">Leakage</th>
-                <th class="text-right py-2">Revenue</th>
+                <th class="pb-2">Customer</th>
+                <th class="pb-2 text-right">Leakage</th>
+                <th class="pb-2 text-right">Revenue</th>
               </tr>
             </thead>
-            <tbody id="worstCustomersBody"></tbody>
+            <tbody id="worstCustomersBody" class="divide-y divide-slate-200 text-sm text-slate-600"></tbody>
           </table>
         </div>
-        <div class="bg-white border border-slate-200 rounded-xl p-4">
+        <div class="card-shadow border border-slate-900 bg-white p-6">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wide">Worst SKUs & CPTs</h3>
-            <span class="text-xs text-slate-400">Leakage focus</span>
+            <h2 class="text-lg font-semibold text-slate-900">SKUs &amp; CPT Codes Off-Target</h2>
+            <span class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Sales Ops Focus</span>
           </div>
-          <table class="w-full mt-3 text-sm">
-            <thead class="text-slate-500">
+          <table class="mt-6 w-full text-sm">
+            <thead class="text-left text-xs uppercase tracking-[0.3em] text-slate-400">
               <tr>
-                <th class="text-left py-2">SKU</th>
-                <th class="text-right py-2">Leakage</th>
-                <th class="text-right py-2">Revenue</th>
+                <th class="pb-2">SKU / CPT</th>
+                <th class="pb-2 text-right">Leakage</th>
+                <th class="pb-2 text-right">Revenue</th>
               </tr>
             </thead>
-            <tbody id="worstSkusBody"></tbody>
+            <tbody id="worstSkusBody" class="divide-y divide-slate-200 text-sm text-slate-600"></tbody>
           </table>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="bg-white border border-slate-200 rounded-xl p-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wide">Margin Trend</h3>
-          <span class="text-xs text-slate-400">Rolling gross margin percent</span>
+    <section class="mx-auto max-w-6xl px-6 py-16">
+      <div class="card-shadow border border-slate-900 bg-white p-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <h2 class="text-lg font-semibold text-slate-900">Gross Margin Trend</h2>
+          <span class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Rolling Realization %</span>
         </div>
-        <div class="mt-4">
+        <div class="mt-6">
           <canvas id="marginChart" height="120"></canvas>
         </div>
-      </section>
-    </main>
-  </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="relative z-20 border-t border-slate-900 bg-white py-8">
+    <div class="mx-auto flex max-w-6xl flex-col gap-4 px-6 text-[10px] uppercase tracking-[0.35em] text-slate-500 md:flex-row md:items-center md:justify-between">
+      <span>© <span id="footerYear"></span> MarginMap. Precision financial intelligence for healthcare suppliers.</span>
+      <a href="/upload.html" class="text-slate-600 transition hover:text-slate-900">Upload new data</a>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('footerYear').textContent = new Date().getFullYear();
+  </script>
   <script src="/js/common.js"></script>
   <script src="/js/dashboard.js"></script>
 </body>

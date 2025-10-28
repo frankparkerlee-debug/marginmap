@@ -67,7 +67,7 @@ marginmap/
 4. `npm run seed` (creates admin user with the credentials in `.env`)
 5. `npm run dev` (nodemon) or `npm start`
 
-Log in at `http://localhost:3000/login.html` using the seeded credentials. The seed script also provisions `parker@senecawest.com` / `Password321` for analyst access.
+Log in at `http://localhost:3000/login.html` using the seeded credentials if you want to exercise auth flows. Authentication is optional in the current build; dashboards are accessible without signing in. The seed script also provisions `parker@senecawest.com` / `Password321` for analyst access.
 
 ## Deploying to Render
 This repository includes a `render.yaml` describing a Render Web Service named `marginmap1`. Key points:
@@ -82,7 +82,7 @@ This repository includes a `render.yaml` describing a Render Web Service named `
    - `COMPANY_NAME`: label shown in the UI
    - `DEFAULT_MARGIN_TARGET`: e.g. `0.6`
 5. Redeploy; the `start:render` script runs migrations and seeds the admin account on each boot.
-6. Access the live app at `https://marginmap1.onrender.com/home.html` (public landing) or go directly to `https://marginmap1.onrender.com/login.html`.
+6. Access the live app at `https://marginmap1.onrender.com/home.html` (public landing) or go directly to `https://marginmap1.onrender.com/login.html` if you enable auth.
 
 ## Environment Variables
 - `PORT` – API + UI port (default 3000)
@@ -124,7 +124,7 @@ All protected endpoints require `Authorization: Bearer <token>`.
 4. Export CSV for compliance via the UI or `/api/actions/export/csv`.
 
 ## Frontend Pages
-- `/home`: public marketing landing page
+- `/home`: public brutalist landing page (no login required)
 - `/login`: secure entry
 - `/dashboard`: executive KPIs + trend
 - `/sku`: SKU/CPT explorer with drill-down

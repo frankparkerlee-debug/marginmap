@@ -28,9 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
       statusEl.className = 'text-sm text-slate-500 mt-4';
 
       const token = MM.getToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await fetch('/api/upload', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
         body: formData
       });
 

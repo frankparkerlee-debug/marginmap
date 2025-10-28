@@ -77,8 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
   exportBtn.addEventListener('click', async () => {
     try {
       const token = MM.getToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const response = await fetch('/api/actions/export/csv', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers
       });
       if (!response.ok) throw new Error('Unable to export CSV');
       const blob = await response.blob();

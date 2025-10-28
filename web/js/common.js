@@ -6,9 +6,7 @@ const MM = {
     return localStorage.getItem('mm_token');
   },
   requireAuth() {
-    if (!MM.getToken()) {
-      window.location.href = '/login.html';
-    }
+    // Authentication temporarily disabled; no-op.
   },
   async apiFetch(path, options = {}) {
     const opts = { ...options };
@@ -55,24 +53,17 @@ const MM = {
     const navLinks = document.querySelectorAll('[data-nav]');
     navLinks.forEach((link) => {
       if (link.dataset.nav === pageKey) {
-        link.classList.add('bg-slate-800', 'text-teal-300');
+        link.classList.add('border-slate-900', 'text-slate-900');
+        link.classList.remove('text-slate-500');
       } else {
-        link.classList.remove('bg-slate-800', 'text-teal-300');
+        link.classList.remove('border-slate-900', 'text-slate-900');
+        link.classList.add('text-slate-500');
       }
     });
 
     const companyNameEl = document.getElementById('companyName');
     if (companyNameEl) {
       companyNameEl.textContent = DEFAULT_COMPANY_NAME;
-    }
-
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', (event) => {
-        event.preventDefault();
-        localStorage.removeItem('mm_token');
-        window.location.href = '/login.html';
-      });
     }
   }
 };
@@ -81,7 +72,6 @@ window.MM = MM;
 
 document.addEventListener('DOMContentLoaded', () => {
   if (document.body.dataset.page && document.body.dataset.page !== 'login') {
-    MM.requireAuth();
     MM.initLayout();
   }
 });
