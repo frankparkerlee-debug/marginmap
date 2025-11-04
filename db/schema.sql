@@ -66,6 +66,14 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS sku_settings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sku_code TEXT UNIQUE NOT NULL,
+  target_margin_percent REAL DEFAULT 55,
+  notes TEXT,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_transactions_sku ON transactions(sku_code);
 CREATE INDEX IF NOT EXISTS idx_transactions_customer ON transactions(customer_name);
