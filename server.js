@@ -35,6 +35,24 @@ const schema = readFileSync(schemaPath, 'utf-8');
 db.exec(schema);
 console.log('✓ Database initialized');
 
+// Auto-seed if no users exist (for Render's ephemeral filesystem)
+import bcrypt from 'bcryptjs';
+const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
+if (userCount.count === 0) {
+  console.log('🌱 No users found, seeding database...');
+  const demoEmail = 'analyst@marginmap.io';
+  const demoPassword = 'demo123';
+  const passwordHash = bcrypt.hashSync(demoPassword, 10);
+
+  db.prepare(`
+    INSERT INTO users (email, password_hash, role, full_name)
+    VALUES (?, ?, ?, ?)
+  `).run(demoEmail, passwordHash, 'analyst', 'Demo Analyst');
+
+  console.log('✓ Created demo user:', demoEmail);
+  console.log('  Password:', demoPassword);
+}
+
 // Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
