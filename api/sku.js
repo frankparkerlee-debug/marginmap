@@ -1,12 +1,13 @@
 import express from 'express';
 import { getAllSkus, skuProfitability } from '../services/analyticsService.js';
+import { getAllEnhancedSkus, enhancedSkuProfitability } from '../services/enhancedAnalyticsService.js';
 
 const router = express.Router();
 
-// Get all SKUs with profitability metrics
+// Get all SKUs with profitability metrics (now returns enhanced metrics)
 router.get('/', (req, res) => {
   try {
-    const skus = getAllSkus();
+    const skus = getAllEnhancedSkus();
     res.json({ skus });
   } catch (error) {
     console.error('SKU list error:', error);
@@ -14,11 +15,11 @@ router.get('/', (req, res) => {
   }
 });
 
-// Get specific SKU details
+// Get specific SKU details (now returns enhanced metrics)
 router.get('/:skuCode', (req, res) => {
   try {
     const { skuCode } = req.params;
-    const data = skuProfitability(skuCode);
+    const data = enhancedSkuProfitability(skuCode);
 
     if (!data) {
       return res.status(404).json({ error: 'SKU not found' });

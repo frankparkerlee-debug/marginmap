@@ -131,8 +131,7 @@ const protectedPages = [
   '/sku.html',
   '/customers.html',
   '/actions.html',
-  '/upload.html',
-  '/enhanced.html'
+  '/upload.html'
 ];
 
 protectedPages.forEach(page => {
