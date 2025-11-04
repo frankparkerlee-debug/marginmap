@@ -4,7 +4,7 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: npm install && npm run migrate && npm run seed
+    buildCommand: npm ci && npm run migrate && npm run seed
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -19,3 +19,5 @@ services:
         value: ./storage/uploads
       - key: TARGET_MARGIN_PERCENT
         value: 55
+      - key: NODE_VERSION
+        value: 20.18.0
