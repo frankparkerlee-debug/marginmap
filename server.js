@@ -20,6 +20,7 @@ import skuRouter from './api/sku.js';
 import customersRouter from './api/customers.js';
 import actionsRouter from './api/actions.js';
 import uploadRouter from './api/upload.js';
+import enhancedRouter from './api/enhanced.js';
 
 dotenv.config();
 
@@ -106,6 +107,7 @@ app.use('/api/sku', requireAuth, skuRouter);
 app.use('/api/customers', requireAuth, customersRouter);
 app.use('/api/actions', requireAuth, actionsRouter);
 app.use('/api/upload', requireAuth, uploadRouter);
+app.use('/api/enhanced', requireAuth, enhancedRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -129,7 +131,8 @@ const protectedPages = [
   '/sku.html',
   '/customers.html',
   '/actions.html',
-  '/upload.html'
+  '/upload.html',
+  '/enhanced.html'
 ];
 
 protectedPages.forEach(page => {

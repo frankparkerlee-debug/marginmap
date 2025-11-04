@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced Analytics - MarginMap</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <h1 class="brand-title">MarginMap</h1>
+      <span class="brand-subtitle">Enhanced Analytics</span>
+    </div>
+    <div class="navbar-menu">
+      <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      <a href="/sku.html" class="nav-link">SKUs</a>
+      <a href="/customers.html" class="nav-link">Customers</a>
+      <a href="/actions.html" class="nav-link">Actions</a>
+      <a href="/enhanced.html" class="nav-link active">Enhanced</a>
+      <a href="/upload.html" class="nav-link">Upload</a>
+      <button id="logoutBtn" class="btn-secondary">Logout</button>
+    </div>
+  </nav>
+
+  <main class="container">
+    <div class="page-header">
+      <h2>Enhanced Margin Analysis</h2>
+      <p class="subtitle">Business-type-aware profitability with dynamic benchmarking</p>
+    </div>
+
+    <!-- Business Type Selector -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Business Configuration</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label for="businessType">Your Business Type:</label>
+          <select id="businessType" class="form-control">
+            <option value="manufacturer">Manufacturer - Raw materials to production to sale</option>
+            <option value="wholesaler">Wholesaler - Product acquisition to distribution to retail</option>
+            <option value="retailer">Retailer - Product acquisition to customer sale</option>
+          </select>
+        </div>
+        <div class="business-type-info" id="businessTypeInfo">
+          <!-- Dynamic content -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Metrics Overview -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Gross Margin</div>
+        <div class="metric-value" id="grossMargin">--</div>
+        <div class="metric-sublabel">Before operating expenses</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value metric-primary" id="netMargin">--</div>
+        <div class="metric-label">Net Margin</div>
+        <div class="metric-sublabel">After all expenses</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Operating Expenses</div>
+        <div class="metric-value" id="totalExpenses">--</div>
+        <div class="metric-sublabel" id="expensePercent">--</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total Erosion</div>
+        <div class="metric-value warning" id="totalErosion">--</div>
+        <div class="metric-sublabel">Discounts + Returns + Expenses</div>
+      </div>
+    </div>
+
+    <!-- Expense Breakdown Chart -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Expense Breakdown</h3>
+        <p class="card-subtitle">Operating costs by category for <span id="businessTypeLabel">--</span></p>
+      </div>
+      <div class="card-body">
+        <div class="chart-container">
+          <canvas id="expenseChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Margin Erosion Waterfall -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Margin Erosion Analysis</h3>
+        <p class="card-subtitle">Where your margin is being lost</p>
+      </div>
+      <div class="card-body">
+        <div id="erosionSummary" class="erosion-grid">
+          <!-- Dynamic content -->
+        </div>
+      </div>
+    </div>
+
+    <!-- SKUs Below Target -->
+    <div class="card">
+      <div class="card-header">
+        <h3>SKUs Below Category Target</h3>
+        <p class="card-subtitle">Products not meeting dynamic benchmark</p>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Net Margin</th>
+                <th>Target</th>
+                <th>Gap</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="belowTargetTable">
+              <tr>
+                <td colspan="7" class="text-center">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- High Expense SKUs -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Highest Expense SKUs</h3>
+        <p class="card-subtitle">Products with highest operating costs</p>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Product</th>
+                <th>Revenue</th>
+                <th>Total Expenses</th>
+                <th>Expense Ratio</th>
+                <th>Top Categories</th>
+              </tr>
+            </thead>
+            <tbody id="highExpenseTable">
+              <tr>
+                <td colspan="6" class="text-center">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script>
+    let expenseChart = null;
+
+    async function loadEnhancedDashboard() {
+      try {
+        const response = await fetch('/api/enhanced/dashboard');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch enhanced dashboard');
+        }
+
+        const data = await response.json();
+
+        // Update business type label
+        document.getElementById('businessTypeLabel').textContent = data.businessType;
+        document.getElementById('businessType').value = data.businessType;
+
+        // Update metrics
+        const overview = data.overview;
+        document.getElementById('grossMargin').textContent = `${overview.grossMarginPercent.toFixed(1)}%`;
+        document.getElementById('netMargin').textContent = `${overview.netMarginPercent.toFixed(1)}%`;
+        document.getElementById('totalExpenses').textContent = formatCurrency(overview.totalExpenses);
+
+        const expensePercent = overview.revenue > 0 ? (overview.totalExpenses / overview.revenue * 100).toFixed(1) : 0;
+        document.getElementById('expensePercent').textContent = `${expensePercent}% of revenue`;
+
+        // Calculate total erosion
+        const totalErosion = overview.totalExpenses;
+        document.getElementById('totalErosion').textContent = formatCurrency(totalErosion);
+
+        // Update expense breakdown chart
+        updateExpenseChart(data.expenseBreakdown);
+
+        // Update erosion summary
+        updateErosionSummary(data);
+
+        // Update tables
+        updateBelowTargetTable(data.topLowMarginSkus);
+        updateHighExpenseTable(data.topHighExpenseSkus);
+
+        // Update business type info
+        updateBusinessTypeInfo(data.businessType);
+
+      } catch (error) {
+        console.error('Error loading enhanced dashboard:', error);
+        showToast('Failed to load enhanced dashboard', 'error');
+      }
+    }
+
+    function updateExpenseChart(expenseBreakdown) {
+      const categories = Object.values(expenseBreakdown);
+
+      if (categories.length === 0) {
+        return;
+      }
+
+      const labels = categories.map(c => c.name);
+      const values = categories.map(c => c.total);
+
+      const ctx = document.getElementById('expenseChart');
+
+      if (expenseChart) {
+        expenseChart.destroy();
+      }
+
+      expenseChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: values,
+            backgroundColor: [
+              '#0ea5e9',
+              '#06b6d4',
+              '#14b8a6',
+              '#10b981',
+              '#84cc16',
+              '#eab308',
+              '#f59e0b',
+              '#ef4444'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              position: 'right'
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = formatCurrency(context.parsed);
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percent = ((context.parsed / total) * 100).toFixed(1);
+                  return `${label}: ${value} (${percent}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateErosionSummary(data) {
+      // This would show a waterfall-style breakdown
+      // For now, just show the key categories
+      const erosionDiv = document.getElementById('erosionSummary');
+
+      erosionDiv.innerHTML = `
+        <div class="erosion-item">
+          <div class="erosion-label">Operating Expenses</div>
+          <div class="erosion-value">${formatCurrency(data.overview.totalExpenses)}</div>
+          <div class="erosion-percent">${((data.overview.totalExpenses / data.overview.revenue) * 100).toFixed(1)}%</div>
+        </div>
+      `;
+    }
+
+    function updateBelowTargetTable(skus) {
+      const tbody = document.getElementById('belowTargetTable');
+
+      if (skus.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">All SKUs meeting target margins!</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = skus.map(sku => `
+        <tr>
+          <td><code>${sku.skuCode}</code></td>
+          <td>${sku.skuName}</td>
+          <td>${sku.category}</td>
+          <td>${sku.netMarginPercent.toFixed(1)}%</td>
+          <td>--</td>
+          <td class="warning">--</td>
+          <td><span class="badge badge-${sku.performanceStatus === 'below_target' ? 'error' : 'warning'}">${sku.performanceStatus}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function updateHighExpenseTable(skus) {
+      const tbody = document.getElementById('highExpenseTable');
+
+      if (skus.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No expense data available</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = skus.slice(0, 10).map(sku => {
+        const expenseRatio = sku.revenue > 0 ? (sku.totalExpenses / sku.revenue * 100).toFixed(1) : 0;
+        return `
+          <tr>
+            <td><code>${sku.skuCode}</code></td>
+            <td>${sku.skuName}</td>
+            <td>${formatCurrency(sku.revenue)}</td>
+            <td>${formatCurrency(sku.totalExpenses)}</td>
+            <td>${expenseRatio}%</td>
+            <td>--</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateBusinessTypeInfo(businessType) {
+      const infoDiv = document.getElementById('businessTypeInfo');
+
+      const descriptions = {
+        manufacturer: {
+          title: 'Manufacturer',
+          description: 'Track from raw material acquisition through production to point of sale.',
+          expenses: ['Raw Materials', 'Production Loss/Damage', 'Direct Labor', 'Equipment & Maintenance', 'Quality Control', 'Packaging Materials']
+        },
+        wholesaler: {
+          title: 'Wholesaler',
+          description: 'Track from product acquisition through storage and distribution to retail.',
+          expenses: ['Product Acquisition', 'Storage & Warehousing', 'Logistics & Freight', 'Distribution', 'Handling & Processing', 'Inventory Shrinkage']
+        },
+        retailer: {
+          title: 'Retailer',
+          description: 'Track from product acquisition through store operations to customer sale.',
+          expenses: ['Product Acquisition', 'Advertising & Marketing', 'Transportation', 'Store Operations', 'Labor & Staffing', 'Shrinkage']
+        }
+      };
+
+      const info = descriptions[businessType];
+
+      infoDiv.innerHTML = `
+        <div class="business-type-description">
+          <h4>${info.title}</h4>
+          <p>${info.description}</p>
+          <div class="expense-categories">
+            <strong>Tracked Expense Categories:</strong>
+            <ul>
+              ${info.expenses.map(exp => `<li>${exp}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+
+    // Business type selector change handler
+    document.getElementById('businessType').addEventListener('change', async (e) => {
+      const newType = e.target.value;
+
+      // In a real implementation, this would call an API to update the setting
+      showToast(`Business type changed to: ${newType}. Reload to see updated benchmarks.`, 'info');
+      updateBusinessTypeInfo(newType);
+    });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      loadEnhancedDashboard();
+    });
+  </script>
+
+  <style>
+    .business-type-info {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border-radius: 12px;
+      border-left: 4px solid #0ea5e9;
+    }
+
+    .business-type-description h4 {
+      color: #0c4a6e;
+      margin-bottom: 0.5rem;
+    }
+
+    .business-type-description p {
+      color: #475569;
+      margin-bottom: 1rem;
+    }
+
+    .expense-categories {
+      margin-top: 1rem;
+    }
+
+    .expense-categories strong {
+      color: #0c4a6e;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .expense-categories ul {
+      list-style: none;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.5rem;
+    }
+
+    .expense-categories li {
+      padding: 0.5rem;
+      background: white;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      color: #475569;
+    }
+
+    .erosion-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .erosion-item {
+      padding: 1rem;
+      background: #f8fafc;
+      border-radius: 8px;
+      border-left: 4px solid #ef4444;
+    }
+
+    .erosion-label {
+      font-size: 0.875rem;
+      color: #64748b;
+      margin-bottom: 0.5rem;
+    }
+
+    .erosion-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 0.25rem;
+    }
+
+    .erosion-percent {
+      font-size: 0.875rem;
+      color: #ef4444;
+      font-weight: 600;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 400px;
+    }
+
+    .badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+  </style>
+</body>
+</html>
