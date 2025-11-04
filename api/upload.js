@@ -4,6 +4,7 @@ import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { processUpload } from '../services/ingestService.js';
 import { saveRecommendations } from '../services/recommendationService.js';
+import db from '../db/index.js';
 
 const router = express.Router();
 
@@ -72,7 +73,6 @@ router.post('/', upload.single('file'), async (req, res) => {
 // Get upload history
 router.get('/history', (req, res) => {
   try {
-    const db = (await import('../db/index.js')).default;
     const uploads = db.prepare(`
       SELECT
         u.id,
