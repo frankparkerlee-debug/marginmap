@@ -52,8 +52,8 @@
           <h1>SKU Explorer</h1>
           <p class="page-subtitle">Analyze profitability, pricing, and performance by product</p>
         </div>
-        <div>
-          <span class="badge badge-low">Target Margin: 55%</span>
+        <div id="business-type-badge">
+          <!-- Dynamic business type will be inserted here -->
         </div>
       </header>
 
@@ -72,10 +72,10 @@
                   <th>Product Name</th>
                   <th>Category</th>
                   <th>Revenue</th>
-                  <th>Units Sold</th>
-                  <th>Margin %</th>
+                  <th>Net Margin</th>
+                  <th>Target</th>
                   <th>Returns</th>
-                  <th>Status</th>
+                  <th>Performance</th>
                 </tr>
               </thead>
               <tbody id="sku-tbody">
@@ -105,6 +105,14 @@
         await checkAuth();
 
         const data = await apiCall('/api/sku');
+
+        // Display business type badge
+        if (data.skus && data.skus.length > 0 && data.skus[0].businessType) {
+          const businessType = data.skus[0].businessType;
+          const badge = document.getElementById('business-type-badge');
+          badge.innerHTML = `<span class="badge badge-low">${businessType.charAt(0).toUpperCase() + businessType.slice(1)} Mode</span>`;
+        }
+
         renderSKUTable(data.skus);
 
       } catch (error) {
@@ -128,39 +136,71 @@
       }
 
       tbody.innerHTML = skus.map(sku => {
-        const marginStatus = getMarginStatus(sku.marginPercent);
-        const returnRate = sku.totalUnits > 0 ? (sku.totalReturns / sku.totalUnits) * 100 : 0;
+        // Use enhanced data structure
+        const netMargin = sku.netMarginPercent || sku.marginPercent || 0;
+        const targetMargin = sku.benchmark?.target || 45;
+        const performance = sku.performanceVsBenchmark?.status || 'unknown';
+
+        // Calculate return rate
+        const returnRate = sku.erosionFactors?.returns?.rate || 0;
+        const returnAmount = sku.erosionFactors?.returns?.amount || 0;
+
+        // Status badge based on performance
+        let performanceBadge = '';
+        let marginBadge = '';
+
+        if (performance === 'excellent') {
+          performanceBadge = '<span class="badge badge-success">Excellent</span>';
+          marginBadge = 'success';
+        } else if (performance === 'acceptable') {
+          performanceBadge = '<span class="badge badge-low">Acceptable</span>';
+          marginBadge = 'low';
+        } else if (performance === 'below_target') {
+          performanceBadge = '<span class="badge badge-critical">Below Target</span>';
+          marginBadge = 'critical';
+        } else {
+          performanceBadge = '<span class="badge badge-medium">Unknown</span>';
+          marginBadge = 'medium';
+        }
+
+        // Benchmark visualization
+        const minMargin = sku.benchmark?.min || 35;
+        const maxMargin = sku.benchmark?.max || 55;
+        const gap = sku.performanceVsBenchmark?.gap || 0;
+
+        // Create a simple inline bar showing position relative to target
+        const gapIndicator = gap > 0
+          ? `<span style="color: #ef4444; font-size: 11px;">↓${Math.abs(gap).toFixed(0)}%</span>`
+          : `<span style="color: #10b981; font-size: 11px;">↑${Math.abs(gap).toFixed(0)}%</span>`;
 
         return `
           <tr>
             <td><strong>${sku.skuCode}</strong></td>
-            <td>${sku.skuName}</td>
+            <td>${sku.skuName || sku.skuCode}</td>
             <td>${sku.category || 'N/A'}</td>
-            <td>${formatCurrency(sku.totalRevenue)}</td>
-            <td>${formatNumber(sku.totalUnits)}</td>
+            <td>${formatCurrency(sku.revenue || sku.totalRevenue || 0)}</td>
             <td>
-              <span class="badge badge-${marginStatus}">
-                ${formatPercent(sku.marginPercent)}
+              <span class="badge badge-${marginBadge}">
+                ${formatPercent(netMargin)}
               </span>
             </td>
             <td>
-              ${sku.totalReturns} (${formatPercent(returnRate, 1)})
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="color: #64748b; font-size: 13px; font-weight: 600;">
+                  ${formatPercent(targetMargin)}
+                </span>
+                ${gap !== 0 ? gapIndicator : ''}
+              </div>
             </td>
             <td>
-              ${sku.belowTarget
-                ? '<span class="badge badge-critical">Below Target</span>'
-                : '<span class="badge badge-success">Healthy</span>'}
+              ${returnRate > 0 ? formatPercent(returnRate, 1) : '0%'}
+            </td>
+            <td>
+              ${performanceBadge}
             </td>
           </tr>
         `;
       }).join('');
-    }
-
-    function getMarginStatus(margin) {
-      if (margin >= 65) return 'success';
-      if (margin >= 55) return 'low';
-      if (margin >= 45) return 'medium';
-      return 'high';
     }
 
     // Initialize

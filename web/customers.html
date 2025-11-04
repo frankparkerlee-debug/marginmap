@@ -67,10 +67,10 @@
                 <tr>
                   <th>Customer Name</th>
                   <th>Revenue</th>
-                  <th>Gross Margin %</th>
-                  <th>Margin Leakage</th>
+                  <th>Gross Margin</th>
+                  <th>Net Margin</th>
+                  <th>Expenses</th>
                   <th>Transactions</th>
-                  <th>Status</th>
                 </tr>
               </thead>
               <tbody id="customer-tbody">
@@ -123,42 +123,43 @@
       }
 
       tbody.innerHTML = customers.map(customer => {
-        const marginStatus = getMarginStatus(customer.grossMarginPercent);
-        const leakagePercent = customer.revenue > 0 ? (customer.totalLeakage / customer.revenue) * 100 : 0;
+        // Use enhanced data if available, fallback to basic
+        const grossMargin = customer.grossMarginPercent || 0;
+        const netMargin = customer.netMarginPercent || grossMargin;
+        const expenses = customer.totalExpenses || 0;
+
+        // Determine status based on net margin
+        const getStatus = (margin) => {
+          if (margin >= 50) return { badge: 'success', text: 'Excellent' };
+          if (margin >= 40) return { badge: 'low', text: 'Good' };
+          if (margin >= 30) return { badge: 'medium', text: 'Fair' };
+          return { badge: 'critical', text: 'Poor' };
+        };
+
+        const grossStatus = getStatus(grossMargin);
+        const netStatus = getStatus(netMargin);
 
         return `
           <tr>
             <td><strong>${customer.customerName}</strong></td>
             <td>${formatCurrency(customer.revenue)}</td>
             <td>
-              <span class="badge badge-${marginStatus}">
-                ${formatPercent(customer.grossMarginPercent)}
+              <span class="badge badge-${grossStatus.badge}">
+                ${formatPercent(grossMargin)}
               </span>
             </td>
             <td>
-              ${formatCurrency(customer.totalLeakage)}
-              <span style="color: #64748b; font-size: 12px;">
-                (${formatPercent(leakagePercent, 1)})
+              <span class="badge badge-${netStatus.badge}">
+                ${formatPercent(netMargin)}
               </span>
             </td>
-            <td>${customer.transactionCount}</td>
             <td>
-              ${customer.grossMarginPercent >= 50
-                ? '<span class="badge badge-success">Healthy</span>'
-                : customer.grossMarginPercent >= 40
-                  ? '<span class="badge badge-warning">Review</span>'
-                  : '<span class="badge badge-critical">At Risk</span>'}
+              ${expenses > 0 ? formatCurrency(expenses) : '-'}
             </td>
+            <td>${customer.transactionCount || 0}</td>
           </tr>
         `;
       }).join('');
-    }
-
-    function getMarginStatus(margin) {
-      if (margin >= 55) return 'success';
-      if (margin >= 45) return 'low';
-      if (margin >= 35) return 'medium';
-      return 'high';
     }
 
     // Initialize

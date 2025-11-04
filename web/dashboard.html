@@ -53,6 +53,9 @@
           <h1>Profit Dashboard</h1>
           <p class="page-subtitle">Real-time margin intelligence and performance metrics</p>
         </div>
+        <div id="business-type-indicator">
+          <!-- Dynamic business type will be inserted here -->
+        </div>
       </header>
 
       <!-- KPI Cards -->
@@ -75,6 +78,33 @@
           <div class="metric-subvalue" id="gross-profit">$0 profit</div>
         </div>
 
+        <div class="metric-card highlight-card">
+          <div class="metric-header">
+            <span class="metric-icon">🎯</span>
+            <span class="metric-label">Net Margin</span>
+          </div>
+          <div class="metric-value" id="net-margin">0%</div>
+          <div class="metric-subvalue" id="net-profit">$0 profit</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-icon">💸</span>
+            <span class="metric-label">Total Expenses</span>
+          </div>
+          <div class="metric-value" id="total-expenses">$0</div>
+          <div class="metric-subvalue" id="expenses-percent">0% of revenue</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-icon">📦</span>
+            <span class="metric-label">COGS</span>
+          </div>
+          <div class="metric-value" id="total-cogs">$0</div>
+          <div class="metric-subvalue" id="cogs-percent">0% of revenue</div>
+        </div>
+
         <div class="metric-card">
           <div class="metric-header">
             <span class="metric-icon">💧</span>
@@ -83,14 +113,16 @@
           <div class="metric-value warning" id="total-leakage">$0</div>
           <div class="metric-subvalue" id="leakage-percent">0% of revenue</div>
         </div>
+      </div>
 
-        <div class="metric-card">
-          <div class="metric-header">
-            <span class="metric-icon">🎯</span>
-            <span class="metric-label">COGS</span>
-          </div>
-          <div class="metric-value" id="total-cogs">$0</div>
-          <div class="metric-subvalue" id="cogs-percent">0% of revenue</div>
+      <!-- Expense Breakdown -->
+      <div class="card" id="expense-breakdown-card" style="display: none;">
+        <div class="card-header">
+          <h2>Expense Breakdown</h2>
+          <span class="card-subtitle">Operating expenses by category</span>
+        </div>
+        <div class="card-body">
+          <div id="expense-breakdown" class="expense-grid"></div>
         </div>
       </div>
 
@@ -145,14 +177,20 @@
 
         const data = await apiCall('/api/dashboard');
 
-        // Update KPIs with animations
+        // Display business type indicator
+        if (data.businessType) {
+          const indicator = document.getElementById('business-type-indicator');
+          indicator.innerHTML = `<span class="badge badge-low">${data.businessType.charAt(0).toUpperCase() + data.businessType.slice(1)} Mode</span>`;
+        }
+
+        // Update KPIs with basic metrics
         const revenueEl = document.getElementById('total-revenue');
-        const marginEl = document.getElementById('gross-margin');
+        const grossMarginEl = document.getElementById('gross-margin');
         const leakageEl = document.getElementById('total-leakage');
         const cogsEl = document.getElementById('total-cogs');
 
         revenueEl.textContent = formatCurrency(data.overview.revenue);
-        marginEl.textContent = formatPercent(data.overview.grossMarginPercent);
+        grossMarginEl.textContent = formatPercent(data.overview.grossMarginPercent);
         leakageEl.textContent = formatCurrency(data.leakage.totalLeakage);
         cogsEl.textContent = formatCurrency(data.overview.cogs);
 
@@ -161,6 +199,29 @@
 
         const cogsPercent = data.overview.revenue > 0 ? (data.overview.cogs / data.overview.revenue) * 100 : 0;
         document.getElementById('cogs-percent').textContent = formatPercent(cogsPercent) + ' of revenue';
+
+        // Update enhanced metrics if available
+        if (data.enhancedOverview) {
+          const netMarginEl = document.getElementById('net-margin');
+          const netProfitEl = document.getElementById('net-profit');
+          const expensesEl = document.getElementById('total-expenses');
+          const expensesPercentEl = document.getElementById('expenses-percent');
+
+          netMarginEl.textContent = formatPercent(data.enhancedOverview.netMarginPercent);
+          netProfitEl.textContent = formatCurrency(data.enhancedOverview.netProfit) + ' profit';
+          expensesEl.textContent = formatCurrency(data.enhancedOverview.totalExpenses);
+
+          const expensesPercent = data.enhancedOverview.revenue > 0
+            ? (data.enhancedOverview.totalExpenses / data.enhancedOverview.revenue) * 100
+            : 0;
+          expensesPercentEl.textContent = formatPercent(expensesPercent) + ' of revenue';
+
+          // Render expense breakdown if available
+          if (data.expenseBreakdown && Object.keys(data.expenseBreakdown).length > 0) {
+            renderExpenseBreakdown(data.expenseBreakdown);
+            document.getElementById('expense-breakdown-card').style.display = 'block';
+          }
+        }
 
         // Render margin trend chart
         renderMarginChart(data.marginTrend);
@@ -301,6 +362,21 @@
       `).join('');
     }
 
+    function renderExpenseBreakdown(expenseBreakdown) {
+      const container = document.getElementById('expense-breakdown');
+
+      const expenses = Object.entries(expenseBreakdown)
+        .sort((a, b) => b[1].total - a[1].total)
+        .slice(0, 6); // Top 6 expense categories
+
+      container.innerHTML = expenses.map(([code, expense]) => `
+        <div class="expense-item">
+          <div class="expense-label">${expense.name}</div>
+          <div class="expense-value">${formatCurrency(expense.total)}</div>
+        </div>
+      `).join('');
+    }
+
     function getMarginClass(margin) {
       if (margin >= 55) return 'good';
       if (margin >= 45) return 'warning';
@@ -319,6 +395,57 @@
 
     .chart-card {
       grid-column: 1 / -1;
+    }
+
+    .highlight-card {
+      background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+      color: white;
+      box-shadow: 0 4px 20px rgba(14, 165, 233, 0.3);
+    }
+
+    .highlight-card .metric-icon {
+      font-size: 28px;
+    }
+
+    .highlight-card .metric-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .highlight-card .metric-value {
+      color: white;
+      font-size: 36px;
+    }
+
+    .highlight-card .metric-subvalue {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .expense-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .expense-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 16px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border-left: 3px solid #0ea5e9;
+    }
+
+    .expense-label {
+      font-size: 13px;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .expense-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a2e;
     }
 
     .data-list {
