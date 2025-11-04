@@ -73,14 +73,14 @@
                   <th>Category</th>
                   <th>Revenue</th>
                   <th>Net Margin</th>
+                  <th>Your Best</th>
                   <th>Target</th>
-                  <th>Returns</th>
                   <th>Performance</th>
                 </tr>
               </thead>
               <tbody id="sku-tbody">
                 <tr>
-                  <td colspan="8" style="text-align: center; padding: 40px;">
+                  <td colspan="9" style="text-align: center; padding: 40px;">
                     <div class="loading">
                       <div class="spinner"></div>
                       <p>Loading SKU data...</p>
@@ -127,7 +127,7 @@
       if (!skus || skus.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
+            <td colspan="9" style="text-align: center; padding: 40px; color: #94a3b8;">
               No SKU data found. Upload transaction data to get started.
             </td>
           </tr>
@@ -173,6 +173,35 @@
           ? `<span style="color: #ef4444; font-size: 11px;">↓${Math.abs(gap).toFixed(0)}%</span>`
           : `<span style="color: #10b981; font-size: 11px;">↑${Math.abs(gap).toFixed(0)}%</span>`;
 
+        // Internal benchmark (your best performer)
+        const internalBench = sku.internalBenchmark;
+        let yourBestCell = '';
+
+        if (internalBench && internalBench.gap > 0) {
+          // Show comparison to top performer
+          const potentialGain = internalBench.potentialProfit;
+          yourBestCell = `
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <span style="color: #10b981; font-size: 13px; font-weight: 600;">
+                ${formatPercent(internalBench.topPerformerAvg)}
+              </span>
+              <span style="color: #64748b; font-size: 11px;" title="Potential profit if matched top 10%">
+                +${formatCurrency(potentialGain)}
+              </span>
+            </div>
+          `;
+        } else if (internalBench && internalBench.gap <= 0) {
+          // This IS the top performer
+          yourBestCell = `
+            <span style="color: #10b981; font-size: 12px; font-weight: 600;">
+              🏆 Top Performer
+            </span>
+          `;
+        } else {
+          // No comparison available (only product in category)
+          yourBestCell = `<span style="color: #94a3b8; font-size: 12px;">—</span>`;
+        }
+
         return `
           <tr>
             <td><strong>${sku.skuCode}</strong></td>
@@ -184,6 +213,7 @@
                 ${formatPercent(netMargin)}
               </span>
             </td>
+            <td>${yourBestCell}</td>
             <td>
               <div style="display: flex; flex-direction: column; gap: 2px;">
                 <span style="color: #64748b; font-size: 13px; font-weight: 600;">
@@ -191,9 +221,6 @@
                 </span>
                 ${gap !== 0 ? gapIndicator : ''}
               </div>
-            </td>
-            <td>
-              ${returnRate > 0 ? formatPercent(returnRate, 1) : '0%'}
             </td>
             <td>
               ${performanceBadge}

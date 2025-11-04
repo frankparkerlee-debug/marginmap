@@ -392,15 +392,82 @@ export function getEnhancedDashboardMetrics() {
 }
 
 /**
+ * Calculate internal benchmarks by comparing to top performers in same category
+ */
+export function calculateInternalBenchmark(sku, allSkus) {
+  // Filter to same category
+  const sameCategorySkus = allSkus.filter(s =>
+    s.category === sku.category && s.skuCode !== sku.skuCode
+  );
+
+  if (sameCategorySkus.length === 0) {
+    return null; // Not enough data for comparison
+  }
+
+  // Sort by net margin
+  const sorted = sameCategorySkus.sort((a, b) =>
+    b.netMarginPercent - a.netMarginPercent
+  );
+
+  // Get top 10% performers (minimum 1, maximum 5)
+  const top10PercentCount = Math.max(1, Math.min(5, Math.ceil(sorted.length * 0.1)));
+  const topPerformers = sorted.slice(0, top10PercentCount);
+
+  // Calculate average of top performers
+  const avgTopPerformer = topPerformers.reduce((sum, s) =>
+    sum + s.netMarginPercent, 0
+  ) / topPerformers.length;
+
+  // Best single performer
+  const best = sorted[0];
+
+  // Calculate potential revenue gain if this SKU hit top performer average
+  const marginGap = avgTopPerformer - sku.netMarginPercent;
+  const potentialProfit = (sku.revenue * marginGap) / 100;
+
+  return {
+    bestInCategory: {
+      skuCode: best.skuCode,
+      skuName: best.skuName,
+      netMargin: best.netMarginPercent
+    },
+    topPerformerAvg: avgTopPerformer,
+    yourMargin: sku.netMarginPercent,
+    gap: marginGap,
+    potentialProfit: Math.round(potentialProfit),
+    sampleSize: sameCategorySkus.length,
+    percentileRank: calculatePercentileRank(sku.netMarginPercent, sameCategorySkus)
+  };
+}
+
+/**
+ * Calculate percentile rank (what % of products are worse than this one)
+ */
+function calculatePercentileRank(value, allValues) {
+  const margins = allValues.map(v => v.netMarginPercent).sort((a, b) => a - b);
+  const countBelow = margins.filter(m => m < value).length;
+  return Math.round((countBelow / margins.length) * 100);
+}
+
+/**
  * Get all SKUs with enhanced metrics
  */
 export function getAllEnhancedSkus() {
   const transactions = db.prepare('SELECT * FROM transactions').all();
   const skuCodes = [...new Set(transactions.map(t => t.sku_code))];
 
-  return skuCodes.map(code => {
+  const skus = skuCodes.map(code => {
     return enhancedSkuProfitability(code);
   }).sort((a, b) => b.revenue - a.revenue);
+
+  // Add internal benchmarks to each SKU
+  return skus.map(sku => {
+    const internalBenchmark = calculateInternalBenchmark(sku, skus);
+    return {
+      ...sku,
+      internalBenchmark
+    };
+  });
 }
 
 /**

@@ -171,8 +171,14 @@
         return;
       }
 
-      container.innerHTML = recommendations.map((rec, index) => `
-        <div class="recommendation-card">
+      container.innerHTML = recommendations.map((rec, index) => {
+        // Highlight internal benchmarks as highly actionable
+        const isInternalBench = rec.category === 'internal_benchmark';
+        const cardClass = isInternalBench ? 'recommendation-card internal-benchmark-card' : 'recommendation-card';
+
+        return `
+        <div class="${cardClass}">
+          ${isInternalBench ? '<div class="internal-benchmark-flag">🏆 Learn from Your Best</div>' : ''}
           <div class="rec-header">
             <div class="rec-info">
               <span class="rec-icon">${getCategoryIcon(rec.category)}</span>
@@ -193,6 +199,11 @@
             <div class="rec-action">
               <strong>Recommended Action:</strong> ${rec.suggested_action}
             </div>
+            ${isInternalBench && rec.benchmark_sku ? `
+              <div class="rec-benchmark-hint" style="margin-top: 12px; padding: 12px; background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 4px;">
+                💡 <strong>Quick Win:</strong> You already achieve this margin with ${rec.benchmark_sku}. Replicate those practices here.
+              </div>
+            ` : ''}
           </div>
           <div class="rec-footer">
             <button class="btn btn-secondary btn-sm" onclick="dismissRecommendation(${rec.id})">
@@ -203,11 +214,13 @@
             </button>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
     }
 
     function formatCategory(category) {
       const labels = {
+        internal_benchmark: 'Internal Benchmark',
         pricing: 'Pricing',
         discount: 'Discounting',
         returns: 'Returns',
@@ -265,6 +278,30 @@
     .recommendation-card:hover {
       border-color: #0ea5e9;
       box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
+    }
+
+    .internal-benchmark-card {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border: 2px solid #10b981;
+      position: relative;
+    }
+
+    .internal-benchmark-card:hover {
+      border-color: #059669;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+    }
+
+    .internal-benchmark-flag {
+      position: absolute;
+      top: -1px;
+      right: -1px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 0 12px 0 8px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
     }
 
     .rec-header {

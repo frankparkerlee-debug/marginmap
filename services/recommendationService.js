@@ -4,7 +4,8 @@ import {
   enhancedSkuProfitability,
   enhancedCustomerProfitability,
   getBusinessType,
-  getMarginBenchmark
+  getMarginBenchmark,
+  getAllEnhancedSkus
 } from './enhancedAnalyticsService.js';
 
 /**
@@ -21,33 +22,54 @@ export function generateRecommendations() {
   }
 
   const businessType = getBusinessType();
-  const skuCodes = [...new Set(transactions.map(t => t.sku_code))];
   const customers = [...new Set(transactions.map(t => t.customer_name))];
   const regions = [...new Set(transactions.map(t => t.region).filter(r => r))];
 
-  // 1. Analyze SKUs with enhanced business-type-aware metrics
-  for (const skuCode of skuCodes) {
-    const skuData = enhancedSkuProfitability(skuCode);
+  // Get all SKUs with internal benchmarks
+  const allSkus = getAllEnhancedSkus();
 
+  // 1. Analyze SKUs with enhanced business-type-aware metrics AND internal benchmarks
+  for (const skuData of allSkus) {
     if (!skuData) continue;
 
     const benchmark = skuData.benchmark;
     const performance = skuData.performanceVsBenchmark;
+    const internalBench = skuData.internalBenchmark;
 
-    // Low margin detection (against dynamic benchmark)
+    // PRIORITY 1: Internal benchmark opportunity (learn from your own top performers)
+    if (internalBench && internalBench.gap > 5 && internalBench.potentialProfit > 5000) {
+      const bestSku = internalBench.bestInCategory;
+
+      recommendations.push({
+        category: 'internal_benchmark',
+        issue_text: `${skuData.skuCode} (${skuData.skuName}) at ${skuData.netMarginPercent.toFixed(1)}% margin vs your top ${skuData.category} performer (${bestSku.skuCode}) at ${bestSku.netMargin.toFixed(1)}%`,
+        suggested_action: `Study ${bestSku.skuCode} practices: same category, ${internalBench.gap.toFixed(1)}% better margin. Replicate pricing, cost structure, or supplier terms.`,
+        dollar_impact: internalBench.potentialProfit,
+        impact_percent: internalBench.gap,
+        priority: internalBench.potentialProfit > 50000 ? 'high' : internalBench.potentialProfit > 20000 ? 'medium' : 'low',
+        sku_code: skuData.skuCode,
+        benchmark_sku: bestSku.skuCode,
+        actionable: true // This is highly actionable - they already do it somewhere!
+      });
+    }
+
+    // PRIORITY 2: Low margin detection (against dynamic benchmark)
     if (performance.status === 'below_target') {
       const marginGap = performance.gap;
       const dollarImpact = (marginGap / 100) * skuData.revenue;
 
-      recommendations.push({
-        category: 'pricing',
-        issue_text: `SKU ${skuCode} (${skuData.skuName}) has ${skuData.netMarginPercent.toFixed(1)}% net margin, below ${benchmark.target.toFixed(1)}% target for ${skuData.category}`,
-        suggested_action: `Increase price or reduce costs to reach target margin. ${businessType === 'manufacturer' ? 'Focus on production efficiency.' : businessType === 'wholesaler' ? 'Optimize logistics costs.' : 'Review marketing spend.'}`,
-        dollar_impact: Math.round(dollarImpact),
-        impact_percent: marginGap,
-        priority: dollarImpact > 10000 ? 'high' : dollarImpact > 5000 ? 'medium' : 'low',
-        sku_code: skuCode
-      });
+      // Only add if internal benchmark didn't already flag it
+      if (!internalBench || internalBench.gap < 5) {
+        recommendations.push({
+          category: 'pricing',
+          issue_text: `SKU ${skuData.skuCode} (${skuData.skuName}) has ${skuData.netMarginPercent.toFixed(1)}% net margin, below ${benchmark.target.toFixed(1)}% target for ${skuData.category}`,
+          suggested_action: `Increase price or reduce costs to reach target margin. ${businessType === 'manufacturer' ? 'Focus on production efficiency.' : businessType === 'wholesaler' ? 'Optimize logistics costs.' : 'Review marketing spend.'}`,
+          dollar_impact: Math.round(dollarImpact),
+          impact_percent: marginGap,
+          priority: dollarImpact > 10000 ? 'high' : dollarImpact > 5000 ? 'medium' : 'low',
+          sku_code: skuData.skuCode
+        });
+      }
     }
 
     // High expense detection (business-type specific)
