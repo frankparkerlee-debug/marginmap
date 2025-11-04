@@ -4,7 +4,7 @@
 
 MarginMap is an enterprise-grade analytics platform that automatically detects margin leakage, pricing inefficiencies, and SKU underperformance — delivering actionable AI recommendations to boost profitability.
 
-**Latest Update:** Production-ready deployment with complete AI recommendation engine, beautiful UI, and smart data ingestion.
+**Latest Update:** Production-ready deployment with complete AI recommendation engine, beautiful UI, smart data ingestion, and 1000-product sample dataset.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
 
