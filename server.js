@@ -1,35 +1,135 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
+import express from 'express';
+import session from 'express-session';
+import compression from 'compression';
+import helmet from 'helmet';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
+import dotenv from 'dotenv';
+
+// Import database
+import db from './db/index.js';
+
+// Import middleware
+import { requireAuth, attachUser } from './middleware/auth.js';
+
+// Import API routes
+import authRouter from './api/auth.js';
+import dashboardRouter from './api/dashboard.js';
+import skuRouter from './api/sku.js';
+import customersRouter from './api/customers.js';
+import actionsRouter from './api/actions.js';
+import uploadRouter from './api/upload.js';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
-const webDir = path.join(__dirname, 'web');
+const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+// Initialize database
+const schemaPath = join(__dirname, 'db/schema.sql');
+const schema = readFileSync(schemaPath, 'utf-8');
+db.exec(schema);
+console.log('✓ Database initialized');
+
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://unpkg.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"]
+    }
+  }
+}));
+
+app.use(compression());
+
+// Body parsing middleware
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/api/auth', require('./api/auth'));
-app.use('/api/upload', require('./api/upload'));
-app.use('/api/dashboard', require('./api/dashboard'));
-app.use('/api/sku', require('./api/sku'));
-app.use('/api/customers', require('./api/customers'));
-app.use('/api/actions', require('./api/actions'));
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'marginmap-secret-key-change-me',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
 
-app.use(express.static(webDir));
+app.use(attachUser);
+
+// Serve static files
+app.use(express.static(join(__dirname, 'web')));
+
+// API routes (authentication not required for login)
+app.use('/api/auth', authRouter);
+
+// Protected API routes
+app.use('/api/dashboard', requireAuth, dashboardRouter);
+app.use('/api/sku', requireAuth, skuRouter);
+app.use('/api/customers', requireAuth, customersRouter);
+app.use('/api/actions', requireAuth, actionsRouter);
+app.use('/api/upload', requireAuth, uploadRouter);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Serve HTML pages
+const publicPages = ['/', '/index.html', '/login.html'];
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(webDir, 'home.html'));
+  res.sendFile(join(__dirname, 'web/index.html'));
 });
 
+app.get('/login.html', (req, res) => {
+  res.sendFile(join(__dirname, 'web/login.html'));
+});
+
+// Protected pages
+const protectedPages = [
+  '/dashboard.html',
+  '/sku.html',
+  '/customers.html',
+  '/actions.html',
+  '/upload.html'
+];
+
+protectedPages.forEach(page => {
+  app.get(page, requireAuth, (req, res) => {
+    res.sendFile(join(__dirname, `web${page}`));
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Error handler
 app.use((err, req, res, next) => {
-  console.error(err);
-  const status = err.status || 500;
-  res.status(status).json({ error: err.message || 'Internal Server Error' });
+  console.error('Error:', err);
+  res.status(500).json({ error: 'Internal server error' });
 });
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`MarginMap listening on http://localhost:${port}`);
+// Start server
+app.listen(PORT, () => {
+  console.log(`\n🚀 MarginMap is running!`);
+  console.log(`\n   Local: http://localhost:${PORT}`);
+  console.log(`   Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`\n✓ Ready to analyze profitability\n`);
 });
+
+export default app;

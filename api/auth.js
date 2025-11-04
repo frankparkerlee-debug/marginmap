@@ -1,62 +1,76 @@
-const express = require('express');
-const bcrypt = require('bcryptjs');
-const { get, run } = require('../db');
-const { authenticate, signToken } = require('../middleware/auth');
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import { queries } from '../db/index.js';
 
 const router = express.Router();
 
-router.post('/register', async (req, res, next) => {
-  try {
-    const { email, password, role = 'analyst' } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-    const normalizedEmail = email.toLowerCase();
-    const existing = await get('SELECT id FROM users WHERE email = ?', [normalizedEmail]);
-    if (existing) {
-      return res.status(409).json({ error: 'Email already registered' });
-    }
-    const hash = await bcrypt.hash(password, 10);
-    const result = await run(
-      'INSERT INTO users (email, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, datetime("now"), datetime("now"))',
-      [normalizedEmail, hash, role]
-    );
-    const user = { id: result.id, email: normalizedEmail, role };
-    const token = signToken(user);
-    res.status(201).json({ token, user });
-  } catch (err) {
-    next(err);
-  }
-});
+// Login endpoint
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
 
-router.post('/login', async (req, res, next) => {
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required' });
+  }
+
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-    const user = await get('SELECT * FROM users WHERE email = ?', [email.toLowerCase()]);
+    const user = queries.getUserByEmail.get(email);
+
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    const valid = await bcrypt.compare(password, user.password_hash);
-    if (!valid) {
+
+    const validPassword = await bcrypt.compare(password, user.password_hash);
+
+    if (!validPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    const token = signToken(user);
-    res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
-  } catch (err) {
-    next(err);
+
+    // Update last login
+    queries.updateLastLogin.run(user.id);
+
+    // Set session
+    req.session.userId = user.id;
+    req.session.userEmail = user.email;
+    req.session.userRole = user.role;
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        full_name: user.full_name
+      }
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
-router.get('/me', authenticate, async (req, res, next) => {
-  try {
-    const user = await get('SELECT id, email, role, created_at FROM users WHERE id = ?', [req.user.id]);
-    res.json({ user });
-  } catch (err) {
-    next(err);
-  }
+// Logout endpoint
+router.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    res.json({ success: true });
+  });
 });
 
-module.exports = router;
+// Get current user
+router.get('/me', (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  res.json({
+    user: {
+      id: req.session.userId,
+      email: req.session.userEmail,
+      role: req.session.userRole
+    }
+  });
+});
+
+export default router;

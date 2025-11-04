@@ -1,18 +1,17 @@
-const express = require('express');
-const dayjs = require('dayjs');
-const { getDashboardSummary } = require('../services/analyticsService');
+import express from 'express';
+import { getDashboardMetrics } from '../services/analyticsService.js';
 
 const router = express.Router();
 
-router.get('/summary', async (req, res, next) => {
+// Get dashboard metrics
+router.get('/', (req, res) => {
   try {
-    const start = req.query.start || dayjs().subtract(90, 'day').format('YYYY-MM-DD');
-    const end = req.query.end || dayjs().format('YYYY-MM-DD');
-    const data = await getDashboardSummary({ start, end });
-    res.json(data);
-  } catch (err) {
-    next(err);
+    const metrics = getDashboardMetrics();
+    res.json(metrics);
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard metrics' });
   }
 });
 
-module.exports = router;
+export default router;

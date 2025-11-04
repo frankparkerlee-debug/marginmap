@@ -1,31 +1,34 @@
-const express = require('express');
-const dayjs = require('dayjs');
-const { listSkuSummary, skuProfitability } = require('../services/analyticsService');
+import express from 'express';
+import { getAllSkus, skuProfitability } from '../services/analyticsService.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res, next) => {
+// Get all SKUs with profitability metrics
+router.get('/', (req, res) => {
   try {
-    const start = req.query.start || dayjs().subtract(90, 'day').format('YYYY-MM-DD');
-    const end = req.query.end || dayjs().format('YYYY-MM-DD');
-    const data = await listSkuSummary({ start, end });
-    res.json({ data, range: { start, end } });
-  } catch (err) {
-    next(err);
+    const skus = getAllSkus();
+    res.json({ skus });
+  } catch (error) {
+    console.error('SKU list error:', error);
+    res.status(500).json({ error: 'Failed to fetch SKU data' });
   }
 });
 
-router.get('/:skuCode', async (req, res, next) => {
+// Get specific SKU details
+router.get('/:skuCode', (req, res) => {
   try {
-    const skuCode = decodeURIComponent(req.params.skuCode);
-    const detail = await skuProfitability(skuCode);
-    if (!detail) {
+    const { skuCode } = req.params;
+    const data = skuProfitability(skuCode);
+
+    if (!data) {
       return res.status(404).json({ error: 'SKU not found' });
     }
-    res.json(detail);
-  } catch (err) {
-    next(err);
+
+    res.json(data);
+  } catch (error) {
+    console.error('SKU detail error:', error);
+    res.status(500).json({ error: 'Failed to fetch SKU details' });
   }
 });
 
-module.exports = router;
+export default router;

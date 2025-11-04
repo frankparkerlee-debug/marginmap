@@ -2,95 +2,343 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MarginMap | Data Upload</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Upload Data - MarginMap</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <span class="logo-icon">📊</span>
+        <span class="logo-text">MarginMap</span>
+      </div>
+
+      <nav class="nav">
+        <a href="/dashboard.html" class="nav-link">
+          <span class="nav-icon">📈</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="/sku.html" class="nav-link">
+          <span class="nav-icon">📦</span>
+          <span>SKU Explorer</span>
+        </a>
+        <a href="/customers.html" class="nav-link">
+          <span class="nav-icon">👥</span>
+          <span>Customers</span>
+        </a>
+        <a href="/actions.html" class="nav-link">
+          <span class="nav-icon">⚡</span>
+          <span>AI Actions</span>
+        </a>
+        <a href="/upload.html" class="nav-link active">
+          <span class="nav-icon">⬆️</span>
+          <span>Upload Data</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="logout-btn" class="logout-btn">
+          <span>🚪</span> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <h1>Upload Transaction Data</h1>
+          <p class="page-subtitle">Import CSV or Excel files with sales, costs, and pricing data</p>
+        </div>
+      </header>
+
+      <!-- Upload Section -->
+      <div class="card" style="margin-bottom: 32px;">
+        <div class="card-header">
+          <h2>Data Import</h2>
+          <span class="card-subtitle">Drag and drop or click to upload</span>
+        </div>
+        <div class="card-body">
+          <form id="upload-form">
+            <div class="upload-zone" id="upload-zone">
+              <div class="upload-icon">📤</div>
+              <h3 style="margin-bottom: 8px;">Drop your file here or click to browse</h3>
+              <p style="color: #64748b; margin-bottom: 20px;">
+                Supports CSV, Excel (.xlsx, .xls) files up to 50MB
+              </p>
+              <input
+                type="file"
+                id="file-input"
+                name="file"
+                accept=".csv,.xlsx,.xls"
+                style="display: none;"
+              >
+              <button type="button" class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+                Select File
+              </button>
+            </div>
+
+            <div id="file-info" style="display: none; margin-top: 20px; padding: 16px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 600; color: #0369a1; margin-bottom: 4px;" id="file-name"></div>
+                  <div style="font-size: 14px; color: #64748b;" id="file-size"></div>
+                </div>
+                <button type="submit" class="btn btn-success" id="upload-btn">
+                  Upload & Process
+                </button>
+              </div>
+            </div>
+
+            <div id="upload-progress" style="display: none; margin-top: 20px;">
+              <div style="margin-bottom: 8px; color: #64748b; font-weight: 600;">Processing...</div>
+              <div style="background: #e5e7eb; border-radius: 8px; height: 8px; overflow: hidden;">
+                <div style="background: linear-gradient(90deg, #0ea5e9, #06b6d4); height: 100%; width: 0%; transition: width 0.3s;" id="progress-bar"></div>
+              </div>
+            </div>
+          </form>
+
+          <!-- Required Columns Info -->
+          <div style="margin-top: 32px; padding: 20px; background: #f8fafc; border-radius: 12px;">
+            <h4 style="margin-bottom: 12px; color: #1a1a2e;">Required Columns</h4>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 14px;">
+              <div><strong>date</strong> - Transaction date</div>
+              <div><strong>customer_name</strong> - Customer or channel</div>
+              <div><strong>sku_code</strong> - Product SKU</div>
+              <div><strong>sku_name</strong> - Product name</div>
+              <div><strong>qty_sold</strong> - Quantity sold</div>
+              <div><strong>unit_cost</strong> - Cost per unit</div>
+              <div><strong>unit_price</strong> - Price per unit</div>
+            </div>
+            <p style="margin-top: 12px; color: #64748b; font-size: 13px;">
+              Optional: invoice_id, region, category, unit_discount, returned_units
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload History -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Recent Uploads</h2>
+          <span class="card-subtitle">Upload history and processing status</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Filename</th>
+                  <th>Uploaded</th>
+                  <th>Rows</th>
+                  <th>Status</th>
+                  <th>Uploaded By</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">
+                    No upload history available
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script type="module">
+    import { apiCall, initNavigation, showToast, checkAuth, formatNumber } from '/js/common.js';
+
+    let selectedFile = null;
+
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileInfo = document.getElementById('file-info');
+    const uploadForm = document.getElementById('upload-form');
+    const uploadProgress = document.getElementById('upload-progress');
+
+    // Drag and drop handlers
+    uploadZone.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('drag-over');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('drag-over');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('drag-over');
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      const allowedTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+      const allowedExtensions = ['.csv', '.xlsx', '.xls'];
+
+      const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+
+      if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExt)) {
+        showToast('Invalid file type. Please upload CSV or Excel files only.', 'error');
+        return;
+      }
+
+      if (file.size > 50 * 1024 * 1024) {
+        showToast('File too large. Maximum size is 50MB.', 'error');
+        return;
+      }
+
+      selectedFile = file;
+
+      document.getElementById('file-name').textContent = file.name;
+      document.getElementById('file-size').textContent = formatFileSize(file.size);
+      fileInfo.style.display = 'block';
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    uploadForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!selectedFile) {
+        showToast('Please select a file to upload', 'error');
+        return;
+      }
+
+      const uploadBtn = document.getElementById('upload-btn');
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Processing...';
+
+      uploadProgress.style.display = 'block';
+      const progressBar = document.getElementById('progress-bar');
+
+      try {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        // Simulate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          progress += 10;
+          if (progress <= 90) {
+            progressBar.style.width = progress + '%';
+          }
+        }, 200);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Upload failed');
+        }
+
+        showToast(data.message || `Successfully imported ${data.imported} transactions`, 'success');
+
+        // Reset form
+        selectedFile = null;
+        fileInput.value = '';
+        fileInfo.style.display = 'none';
+        uploadProgress.style.display = 'none';
+        progressBar.style.width = '0%';
+
+        // Reload upload history
+        loadUploadHistory();
+
+      } catch (error) {
+        showToast(error.message, 'error');
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Upload & Process';
+      }
+    });
+
+    async function loadUploadHistory() {
+      try {
+        const data = await apiCall('/api/upload/history');
+        renderHistory(data.uploads);
+      } catch (error) {
+        console.error('Failed to load upload history:', error);
+      }
+    }
+
+    function renderHistory(uploads) {
+      const tbody = document.getElementById('history-tbody');
+
+      if (!uploads || uploads.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">
+              No upload history available
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = uploads.map(upload => {
+        const uploadDate = new Date(upload.uploaded_at);
+        const statusBadge = upload.processing_status === 'completed'
+          ? '<span class="badge badge-success">Completed</span>'
+          : upload.processing_status === 'failed'
+            ? '<span class="badge badge-critical">Failed</span>'
+            : '<span class="badge badge-medium">Processing</span>';
+
+        return `
+          <tr>
+            <td>${upload.original_filename}</td>
+            <td>${uploadDate.toLocaleString()}</td>
+            <td>${formatNumber(upload.row_count)}</td>
+            <td>${statusBadge}</td>
+            <td>${upload.uploaded_by_email || 'N/A'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Initialize
+    initNavigation();
+    checkAuth();
+    loadUploadHistory();
+  </script>
+
   <style>
-    body {
-      background: #f5f3ef;
-      color: #0f172a;
-      font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
-    }
-    .grain {
-      position: fixed;
-      inset: 0;
-      background-image: url("https://grainy-gradients.vercel.app/noise.svg");
-      opacity: 0.2;
-      pointer-events: none;
-      mix-blend-mode: multiply;
-    }
-    .card-shadow {
-      box-shadow: 8px 8px 0 #0f172a;
+    .upload-zone h3 {
+      color: #1a1a2e;
+      font-size: 20px;
     }
   </style>
-</head>
-<body data-page="upload" class="relative min-h-screen overflow-x-hidden">
-  <div class="grain"></div>
-  <header class="relative z-20 border-b border-slate-900 bg-white/90 backdrop-blur">
-    <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
-      <a href="/home.html" class="flex items-center gap-3">
-        <div class="flex h-12 w-12 items-center justify-center border-2 border-slate-900 bg-black text-2xl font-semibold text-white">M</div>
-        <div>
-          <p class="text-xl font-semibold tracking-tight text-slate-900">MarginMap</p>
-          <p class="text-[10px] uppercase tracking-[0.45em] text-slate-500">Data Pipeline</p>
-        </div>
-      </a>
-      <nav class="flex items-center gap-6 text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">
-        <a data-nav="home" href="/home.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Home</a>
-        <a data-nav="dashboard" href="/dashboard.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Dashboard</a>
-        <a data-nav="sku" href="/sku.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">SKU Explorer</a>
-        <a data-nav="customers" href="/customers.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Customers</a>
-        <a data-nav="actions" href="/actions.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Actions</a>
-        <a data-nav="upload" href="/upload.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Upload</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="relative z-10">
-    <section class="mx-auto max-w-5xl px-6 pt-16">
-      <div class="card-shadow border border-slate-900 bg-white p-8">
-        <div class="grid gap-8 md:grid-cols-[55%_auto] md:items-start">
-          <div>
-            <p class="text-xs uppercase tracking-[0.45em] text-slate-500">Data Ingest</p>
-            <h1 class="mt-4 text-4xl font-semibold leading-tight md:text-5xl">Drop in your invoice or claim data—MarginMap does the rest</h1>
-            <p class="mt-4 text-sm text-slate-600">Upload CSV or Excel files with your transaction-level detail. We normalize headers automatically, store the raw files, and inject the rows directly into the analytics rail.</p>
-            <ul class="mt-6 space-y-2 text-sm text-slate-600">
-              <li>• Required columns: date_of_service, invoice_id, customer_name, payer_name, sku_code, description, qty, unit_cost, unit_price_billed, unit_price_paid.</li>
-              <li>• Supports multiple uploads; each file logged in the audit trail.</li>
-              <li>• Post-upload KPIs appear instantly below.</li>
-            </ul>
-          </div>
-          <div class="border border-slate-200 bg-slate-50 p-6">
-            <form id="uploadForm" class="space-y-4 text-sm">
-              <div>
-                <label class="text-xs uppercase tracking-[0.35em] text-slate-500">Select file</label>
-                <input type="file" id="dataFile" accept=".csv,.xls,.xlsx" required class="mt-2 w-full rounded-none border border-slate-900 bg-white px-3 py-3 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
-              </div>
-              <button type="submit" class="w-full rounded-none border-2 border-slate-900 bg-black px-4 py-3 text-xs font-semibold uppercase tracking-[0.4em] text-white transition hover:bg-white hover:text-slate-900">Process Upload</button>
-            </form>
-            <p id="uploadStatus" class="mt-4 text-xs uppercase tracking-[0.35em] text-slate-500"></p>
-          </div>
-        </div>
-        <div id="uploadSummary" class="mt-10"></div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="relative z-20 border-t border-slate-900 bg-white py-8">
-    <div class="mx-auto flex max-w-6xl flex-col gap-4 px-6 text-[10px] uppercase tracking-[0.35em] text-slate-500 md:flex-row md:items-center md:justify-between">
-      <span>© <span id="footerYear"></span> MarginMap. Data pipeline for healthcare suppliers.</span>
-      <a href="/dashboard.html" class="text-slate-600 transition hover:text-slate-900">Review dashboard after upload</a>
-    </div>
-  </footer>
-
-  <script>
-    document.getElementById('footerYear').textContent = new Date().getFullYear();
-  </script>
-  <script src="/js/common.js"></script>
-  <script src="/js/upload.js"></script>
 </body>
 </html>

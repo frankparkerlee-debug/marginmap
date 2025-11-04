@@ -1,37 +1,97 @@
-const express = require('express');
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
-const { processUpload } = require('../services/ingestService');
+import express from 'express';
+import multer from 'multer';
+import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
+import { processUpload } from '../services/ingestService.js';
+import { saveRecommendations } from '../services/recommendationService.js';
 
 const router = express.Router();
-const uploadDir = path.join(__dirname, '..', 'storage', 'uploads');
+
+// Configure multer for file uploads
+const uploadDir = process.env.UPLOAD_DIR || './storage/uploads';
+
+if (!existsSync(uploadDir)) {
+  mkdirSync(uploadDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    fs.mkdirSync(uploadDir, { recursive: true });
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const timestamp = Date.now();
-    const sanitized = file.originalname.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_.-]/g, '');
-    cb(null, `${timestamp}-${sanitized}`);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
 
-router.post('/', upload.single('file'), async (req, res, next) => {
+    if (allowedTypes.includes(file.mimetype) ||
+        file.originalname.match(/\.(csv|xlsx|xls)$/i)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only CSV and Excel files are allowed.'));
+    }
+  }
+});
+
+// Upload and process data file
+router.post('/', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'File is required' });
+      return res.status(400).json({ error: 'No file uploaded' });
     }
-    const mapping = req.body.mapping ? JSON.parse(req.body.mapping) : null;
-    const result = await processUpload(req.file, mapping);
-    res.status(201).json(result);
-  } catch (err) {
-    next(err);
+
+    const userId = req.session.userId;
+    const result = processUpload(req.file.path, req.file.originalname, userId);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    // Auto-generate recommendations after successful upload
+    saveRecommendations();
+
+    res.json(result);
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ error: error.message || 'Upload failed' });
   }
 });
 
-module.exports = router;
+// Get upload history
+router.get('/history', (req, res) => {
+  try {
+    const db = (await import('../db/index.js')).default;
+    const uploads = db.prepare(`
+      SELECT
+        u.id,
+        u.original_filename,
+        u.uploaded_at,
+        u.row_count,
+        u.processing_status,
+        usr.email as uploaded_by_email
+      FROM uploads u
+      LEFT JOIN users usr ON u.uploaded_by = usr.id
+      ORDER BY u.uploaded_at DESC
+      LIMIT 20
+    `).all();
+
+    res.json({ uploads });
+  } catch (error) {
+    console.error('Upload history error:', error);
+    res.status(500).json({ error: 'Failed to fetch upload history' });
+  }
+});
+
+export default router;

@@ -2,122 +2,186 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MarginMap | SKU Profitability</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>SKU Explorer - MarginMap</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <span class="logo-icon">📊</span>
+        <span class="logo-text">MarginMap</span>
+      </div>
+
+      <nav class="nav">
+        <a href="/dashboard.html" class="nav-link">
+          <span class="nav-icon">📈</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="/sku.html" class="nav-link active">
+          <span class="nav-icon">📦</span>
+          <span>SKU Explorer</span>
+        </a>
+        <a href="/customers.html" class="nav-link">
+          <span class="nav-icon">👥</span>
+          <span>Customers</span>
+        </a>
+        <a href="/actions.html" class="nav-link">
+          <span class="nav-icon">⚡</span>
+          <span>AI Actions</span>
+        </a>
+        <a href="/upload.html" class="nav-link">
+          <span class="nav-icon">⬆️</span>
+          <span>Upload Data</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="logout-btn" class="logout-btn">
+          <span>🚪</span> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <h1>SKU Explorer</h1>
+          <p class="page-subtitle">Analyze profitability, pricing, and performance by product</p>
+        </div>
+        <div>
+          <span class="badge badge-low">Target Margin: 55%</span>
+        </div>
+      </header>
+
+      <!-- SKU Table -->
+      <div class="card">
+        <div class="card-header">
+          <h2>All Products</h2>
+          <span class="card-subtitle">Sort by margin, revenue, or returns</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-container">
+            <table id="sku-table">
+              <thead>
+                <tr>
+                  <th>SKU Code</th>
+                  <th>Product Name</th>
+                  <th>Category</th>
+                  <th>Revenue</th>
+                  <th>Units Sold</th>
+                  <th>Margin %</th>
+                  <th>Returns</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="sku-tbody">
+                <tr>
+                  <td colspan="8" style="text-align: center; padding: 40px;">
+                    <div class="loading">
+                      <div class="spinner"></div>
+                      <p>Loading SKU data...</p>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script type="module">
+    import { formatCurrency, formatPercent, formatNumber, apiCall, initNavigation, showToast, checkAuth } from '/js/common.js';
+
+    async function loadSKUs() {
+      try {
+        await checkAuth();
+
+        const data = await apiCall('/api/sku');
+        renderSKUTable(data.skus);
+
+      } catch (error) {
+        console.error('SKU load failed:', error);
+        showToast('Failed to load SKU data', 'error');
+      }
+    }
+
+    function renderSKUTable(skus) {
+      const tbody = document.getElementById('sku-tbody');
+
+      if (!skus || skus.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
+              No SKU data found. Upload transaction data to get started.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = skus.map(sku => {
+        const marginStatus = getMarginStatus(sku.marginPercent);
+        const returnRate = sku.totalUnits > 0 ? (sku.totalReturns / sku.totalUnits) * 100 : 0;
+
+        return `
+          <tr>
+            <td><strong>${sku.skuCode}</strong></td>
+            <td>${sku.skuName}</td>
+            <td>${sku.category || 'N/A'}</td>
+            <td>${formatCurrency(sku.totalRevenue)}</td>
+            <td>${formatNumber(sku.totalUnits)}</td>
+            <td>
+              <span class="badge badge-${marginStatus}">
+                ${formatPercent(sku.marginPercent)}
+              </span>
+            </td>
+            <td>
+              ${sku.totalReturns} (${formatPercent(returnRate, 1)})
+            </td>
+            <td>
+              ${sku.belowTarget
+                ? '<span class="badge badge-critical">Below Target</span>'
+                : '<span class="badge badge-success">Healthy</span>'}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getMarginStatus(margin) {
+      if (margin >= 65) return 'success';
+      if (margin >= 55) return 'low';
+      if (margin >= 45) return 'medium';
+      return 'high';
+    }
+
+    // Initialize
+    initNavigation();
+    loadSKUs();
+  </script>
+
   <style>
-    body {
-      background: #f5f3ef;
-      color: #0f172a;
-      font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    .table-container {
+      border-radius: 0;
+      border: none;
     }
-    .grain {
-      position: fixed;
-      inset: 0;
-      background-image: url("https://grainy-gradients.vercel.app/noise.svg");
-      opacity: 0.2;
-      pointer-events: none;
-      mix-blend-mode: multiply;
+
+    table {
+      font-size: 14px;
     }
-    .card-shadow {
-      box-shadow: 8px 8px 0 #0f172a;
+
+    td strong {
+      color: #0ea5e9;
+      font-family: 'Courier New', monospace;
     }
   </style>
-</head>
-<body data-page="sku" class="relative min-h-screen overflow-x-hidden">
-  <div class="grain"></div>
-  <header class="relative z-20 border-b border-slate-900 bg-white/90 backdrop-blur">
-    <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
-      <a href="/home.html" class="flex items-center gap-3">
-        <div class="flex h-12 w-12 items-center justify-center border-2 border-slate-900 bg-black text-2xl font-semibold text-white">M</div>
-        <div>
-          <p class="text-xl font-semibold tracking-tight text-slate-900">MarginMap</p>
-          <p class="text-[10px] uppercase tracking-[0.45em] text-slate-500">Product Margin Explorer</p>
-        </div>
-      </a>
-      <nav class="flex items-center gap-6 text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">
-        <a data-nav="home" href="/home.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Home</a>
-        <a data-nav="dashboard" href="/dashboard.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Dashboard</a>
-        <a data-nav="sku" href="/sku.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">SKU Explorer</a>
-        <a data-nav="customers" href="/customers.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Customers</a>
-        <a data-nav="actions" href="/actions.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Actions</a>
-        <a data-nav="upload" href="/upload.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Upload</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="relative z-10">
-    <section class="mx-auto max-w-6xl px-6 pt-16">
-      <div class="flex flex-wrap items-end justify-between gap-6">
-        <div>
-          <p class="text-xs uppercase tracking-[0.45em] text-slate-500">SKU &amp; CPT Intelligence</p>
-          <h1 class="mt-4 text-4xl font-semibold leading-tight md:text-5xl">Pinpoint underpriced products and payer leakage</h1>
-          <p class="mt-4 max-w-2xl text-sm text-slate-600">Scan volume, realized price, and margin target performance across your wound care catalog. Tap a SKU to surface payer and customer variance immediately.</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.35em] text-slate-500">
-          <div class="flex items-center gap-2">
-            <span>From</span>
-            <input type="date" id="startDate" class="rounded-none border border-slate-900 bg-white px-3 py-2 font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
-          </div>
-          <div class="flex items-center gap-2">
-            <span>To</span>
-            <input type="date" id="endDate" class="rounded-none border border-slate-900 bg-white px-3 py-2 font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
-          </div>
-          <button id="refreshSku" class="rounded-none border-2 border-slate-900 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.4em] text-slate-900 transition hover:bg-slate-900 hover:text-white">Refresh</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="mx-auto max-w-6xl px-6 pt-10">
-      <div class="card-shadow border border-slate-900 bg-white">
-        <div class="border-b border-slate-200 px-6 py-4">
-          <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-lg font-semibold text-slate-900">SKU Margin Table</h2>
-            <span class="text-[10px] uppercase tracking-[0.35em] text-slate-500">Click any row for diagnostics</span>
-          </div>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-slate-200 text-sm text-slate-600">
-            <thead class="bg-slate-100 uppercase tracking-[0.3em] text-[11px] text-slate-500">
-              <tr>
-                <th class="py-3 px-4 text-left">SKU / CPT</th>
-                <th class="py-3 px-4 text-right">Avg Cost</th>
-                <th class="py-3 px-4 text-right">Avg Paid</th>
-                <th class="py-3 px-4 text-right">Margin %</th>
-                <th class="py-3 px-4 text-right">Units</th>
-                <th class="py-3 px-4 text-right">Leakage</th>
-              </tr>
-            </thead>
-            <tbody id="skuTableBody" class="divide-y divide-slate-200"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section class="mx-auto max-w-6xl px-6 py-16">
-      <div class="card-shadow border border-slate-900 bg-white p-6">
-        <h2 class="text-lg font-semibold text-slate-900">SKU Diagnostics</h2>
-        <p class="mt-2 text-sm text-slate-500">Review payer compliance and customer pricing pressure for the selected SKU.</p>
-        <div id="skuDetailPanel" class="mt-6 text-sm text-slate-600">Select a SKU from the table above to launch diagnostics.</div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="relative z-20 border-t border-slate-900 bg-white py-8">
-    <div class="mx-auto flex max-w-6xl flex-col gap-4 px-6 text-[10px] uppercase tracking-[0.35em] text-slate-500 md:flex-row md:items-center md:justify-between">
-      <span>© <span id="footerYear"></span> MarginMap. SKU profitability intelligence.</span>
-      <a href="/actions.html" class="text-slate-600 transition hover:text-slate-900">View recommended price moves</a>
-    </div>
-  </footer>
-
-  <script>
-    document.getElementById('footerYear').textContent = new Date().getFullYear();
-  </script>
-  <script src="/js/common.js"></script>
-  <script src="/js/sku.js"></script>
 </body>
 </html>

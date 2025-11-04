@@ -1,16 +1,24 @@
-require('dotenv').config();
-const fs = require('fs');
-const path = require('path');
-const { db } = require('../db');
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import db from '../db/index.js';
 
-const migrationsPath = path.join(__dirname, '..', 'db', 'migrations.sql');
-const sql = fs.readFileSync(migrationsPath, 'utf-8');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-db.exec(sql, (err) => {
-  if (err) {
-    console.error('Migration failed:', err);
-    process.exit(1);
-  }
-  console.log('Database migrated successfully.');
+console.log('🔄 Running database migrations...');
+
+try {
+  const schemaPath = join(__dirname, '../db/schema.sql');
+  const schema = readFileSync(schemaPath, 'utf-8');
+
+  db.exec(schema);
+
+  console.log('✓ Database migrations completed successfully');
+  console.log('✓ Tables created: users, transactions, recommendations, uploads, settings');
+
   process.exit(0);
-});
+} catch (error) {
+  console.error('✗ Migration failed:', error.message);
+  process.exit(1);
+}

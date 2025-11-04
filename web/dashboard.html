@@ -2,163 +2,388 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MarginMap | Executive Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Dashboard - MarginMap</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo">
+        <span class="logo-icon">📊</span>
+        <span class="logo-text">MarginMap</span>
+      </div>
+
+      <nav class="nav">
+        <a href="/dashboard.html" class="nav-link active">
+          <span class="nav-icon">📈</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="/sku.html" class="nav-link">
+          <span class="nav-icon">📦</span>
+          <span>SKU Explorer</span>
+        </a>
+        <a href="/customers.html" class="nav-link">
+          <span class="nav-icon">👥</span>
+          <span>Customers</span>
+        </a>
+        <a href="/actions.html" class="nav-link">
+          <span class="nav-icon">⚡</span>
+          <span>AI Actions</span>
+        </a>
+        <a href="/upload.html" class="nav-link">
+          <span class="nav-icon">⬆️</span>
+          <span>Upload Data</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="logout-btn" class="logout-btn">
+          <span>🚪</span> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <h1>Profit Dashboard</h1>
+          <p class="page-subtitle">Real-time margin intelligence and performance metrics</p>
+        </div>
+      </header>
+
+      <!-- KPI Cards -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-icon">💰</span>
+            <span class="metric-label">Total Revenue</span>
+          </div>
+          <div class="metric-value" id="total-revenue">$0</div>
+          <div class="metric-change positive" id="revenue-change"></div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-icon">📊</span>
+            <span class="metric-label">Gross Margin</span>
+          </div>
+          <div class="metric-value" id="gross-margin">0%</div>
+          <div class="metric-subvalue" id="gross-profit">$0 profit</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-icon">💧</span>
+            <span class="metric-label">Margin Leakage</span>
+          </div>
+          <div class="metric-value warning" id="total-leakage">$0</div>
+          <div class="metric-subvalue" id="leakage-percent">0% of revenue</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-icon">🎯</span>
+            <span class="metric-label">COGS</span>
+          </div>
+          <div class="metric-value" id="total-cogs">$0</div>
+          <div class="metric-subvalue" id="cogs-percent">0% of revenue</div>
+        </div>
+      </div>
+
+      <!-- Charts and Tables Row -->
+      <div class="dashboard-grid">
+        <!-- Margin Trend Chart -->
+        <div class="card chart-card">
+          <div class="card-header">
+            <h2>Margin % Trend</h2>
+            <span class="card-subtitle">Daily gross margin performance</span>
+          </div>
+          <div class="card-body">
+            <canvas id="margin-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Top Low Margin SKUs -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Low Margin SKUs</h2>
+            <span class="card-subtitle">Products below target margin</span>
+          </div>
+          <div class="card-body">
+            <div id="low-margin-skus" class="data-list"></div>
+          </div>
+        </div>
+
+        <!-- Top Low Margin Customers -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Low Margin Customers</h2>
+            <span class="card-subtitle">Accounts with margin erosion</span>
+          </div>
+          <div class="card-body">
+            <div id="low-margin-customers" class="data-list"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script type="module">
+    import { formatCurrency, formatPercent, apiCall, initNavigation, showToast, checkAuth, animateNumber } from '/js/common.js';
+
+    let marginChart = null;
+
+    async function loadDashboard() {
+      try {
+        await checkAuth();
+
+        const data = await apiCall('/api/dashboard');
+
+        // Update KPIs with animations
+        const revenueEl = document.getElementById('total-revenue');
+        const marginEl = document.getElementById('gross-margin');
+        const leakageEl = document.getElementById('total-leakage');
+        const cogsEl = document.getElementById('total-cogs');
+
+        revenueEl.textContent = formatCurrency(data.overview.revenue);
+        marginEl.textContent = formatPercent(data.overview.grossMarginPercent);
+        leakageEl.textContent = formatCurrency(data.leakage.totalLeakage);
+        cogsEl.textContent = formatCurrency(data.overview.cogs);
+
+        document.getElementById('gross-profit').textContent = formatCurrency(data.overview.grossProfit) + ' profit';
+        document.getElementById('leakage-percent').textContent = formatPercent(data.leakage.leakagePercent) + ' of potential revenue';
+
+        const cogsPercent = data.overview.revenue > 0 ? (data.overview.cogs / data.overview.revenue) * 100 : 0;
+        document.getElementById('cogs-percent').textContent = formatPercent(cogsPercent) + ' of revenue';
+
+        // Render margin trend chart
+        renderMarginChart(data.marginTrend);
+
+        // Render low margin SKUs
+        renderLowMarginSkus(data.topLowMarginSkus);
+
+        // Render low margin customers
+        renderLowMarginCustomers(data.topLowMarginCustomers);
+
+      } catch (error) {
+        console.error('Dashboard load failed:', error);
+        showToast('Failed to load dashboard data', 'error');
+      }
+    }
+
+    function renderMarginChart(trendData) {
+      const ctx = document.getElementById('margin-chart');
+
+      if (marginChart) {
+        marginChart.destroy();
+      }
+
+      const labels = trendData.map(d => {
+        const date = new Date(d.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      });
+
+      const margins = trendData.map(d => d.marginPercent);
+
+      marginChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Gross Margin %',
+            data: margins,
+            borderColor: '#0ea5e9',
+            backgroundColor: 'rgba(14, 165, 233, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#0ea5e9',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: '#1a1a2e',
+              padding: 12,
+              titleColor: '#fff',
+              bodyColor: '#fff',
+              borderColor: '#0ea5e9',
+              borderWidth: 1,
+              displayColors: false,
+              callbacks: {
+                label: (context) => `Margin: ${context.parsed.y.toFixed(1)}%`
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: false,
+              ticks: {
+                callback: (value) => value.toFixed(0) + '%',
+                color: '#64748b'
+              },
+              grid: {
+                color: '#f1f5f9'
+              }
+            },
+            x: {
+              ticks: {
+                color: '#64748b'
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderLowMarginSkus(skus) {
+      const container = document.getElementById('low-margin-skus');
+
+      if (!skus || skus.length === 0) {
+        container.innerHTML = '<div class="empty-state">No low-margin SKUs found</div>';
+        return;
+      }
+
+      container.innerHTML = skus.map(sku => `
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">${sku.skuName}</div>
+            <div class="list-item-subtitle">${sku.skuCode}</div>
+          </div>
+          <div class="list-item-side">
+            <div class="list-item-value ${getMarginClass(sku.marginPercent)}">
+              ${formatPercent(sku.marginPercent)}
+            </div>
+            <div class="list-item-subtitle">${formatCurrency(sku.revenue)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderLowMarginCustomers(customers) {
+      const container = document.getElementById('low-margin-customers');
+
+      if (!customers || customers.length === 0) {
+        container.innerHTML = '<div class="empty-state">No low-margin customers found</div>';
+        return;
+      }
+
+      container.innerHTML = customers.map(customer => `
+        <div class="list-item">
+          <div class="list-item-main">
+            <div class="list-item-title">${customer.customerName}</div>
+            <div class="list-item-subtitle">Revenue: ${formatCurrency(customer.revenue)}</div>
+          </div>
+          <div class="list-item-side">
+            <div class="list-item-value ${getMarginClass(customer.marginPercent)}">
+              ${formatPercent(customer.marginPercent)}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function getMarginClass(margin) {
+      if (margin >= 55) return 'good';
+      if (margin >= 45) return 'warning';
+      return 'critical';
+    }
+
+    // Initialize
+    initNavigation();
+    loadDashboard();
+  </script>
+
   <style>
-    body {
-      background: #f5f3ef;
-      color: #0f172a;
-      font-family: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+    #margin-chart {
+      height: 280px;
     }
-    .grain {
-      position: fixed;
-      inset: 0;
-      background-image: url("https://grainy-gradients.vercel.app/noise.svg");
-      opacity: 0.2;
-      pointer-events: none;
-      mix-blend-mode: multiply;
+
+    .chart-card {
+      grid-column: 1 / -1;
     }
-    .card-shadow {
-      box-shadow: 8px 8px 0 #0f172a;
+
+    .data-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .list-item:hover {
+      background: #f1f5f9;
+      transform: translateX(4px);
+    }
+
+    .list-item-main {
+      flex: 1;
+    }
+
+    .list-item-title {
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 2px;
+    }
+
+    .list-item-subtitle {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .list-item-side {
+      text-align: right;
+    }
+
+    .list-item-value {
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+
+    .list-item-value.good {
+      color: #10b981;
+    }
+
+    .list-item-value.warning {
+      color: #f59e0b;
+    }
+
+    .list-item-value.critical {
+      color: #ef4444;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #94a3b8;
     }
   </style>
-</head>
-<body data-page="dashboard" class="relative min-h-screen overflow-x-hidden">
-  <div class="grain"></div>
-  <header class="relative z-20 border-b border-slate-900 bg-white/90 backdrop-blur">
-    <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
-      <a href="/home.html" class="flex items-center gap-3">
-        <div class="flex h-12 w-12 items-center justify-center border-2 border-slate-900 bg-black text-2xl font-semibold text-white">M</div>
-        <div>
-          <p class="text-xl font-semibold tracking-tight text-slate-900">MarginMap</p>
-          <p class="text-[10px] uppercase tracking-[0.45em] text-slate-500">Margin Command Center</p>
-        </div>
-      </a>
-      <nav class="flex items-center gap-6 text-xs font-semibold uppercase tracking-[0.35em] text-slate-500">
-        <a data-nav="home" href="/home.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Home</a>
-        <a data-nav="dashboard" href="/dashboard.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Dashboard</a>
-        <a data-nav="sku" href="/sku.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">SKU Explorer</a>
-        <a data-nav="customers" href="/customers.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Customers</a>
-        <a data-nav="actions" href="/actions.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Actions</a>
-        <a data-nav="upload" href="/upload.html" class="border-b-2 border-transparent pb-1 text-slate-500 transition hover:text-slate-900">Upload</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="relative z-10">
-    <section class="mx-auto max-w-6xl px-6 pt-16">
-      <div class="flex flex-wrap items-end justify-between gap-6">
-        <div>
-          <p class="text-xs uppercase tracking-[0.45em] text-slate-500">Executive Overview</p>
-          <h1 class="mt-4 text-4xl font-semibold leading-tight md:text-5xl">Margin health for <span id="companyName" class="underline decoration-4 decoration-teal-400 underline-offset-4">MarginMap Client</span></h1>
-          <p class="mt-4 max-w-2xl text-sm text-slate-600">Monitor realized margin, identify leakage, and act on the five biggest commercial risks in real time.</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.35em] text-slate-500">
-          <div class="flex items-center gap-2">
-            <span>From</span>
-            <input type="date" id="startDate" class="rounded-none border border-slate-900 bg-white px-3 py-2 font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
-          </div>
-          <div class="flex items-center gap-2">
-            <span>To</span>
-            <input type="date" id="endDate" class="rounded-none border border-slate-900 bg-white px-3 py-2 font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
-          </div>
-          <button id="refreshDashboard" class="rounded-none border-2 border-slate-900 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.4em] text-slate-900 transition hover:bg-slate-900 hover:text-white">Refresh</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="mx-auto max-w-6xl px-6 pt-10">
-      <div class="grid gap-6 md:grid-cols-5">
-        <div class="card-shadow border border-slate-900 bg-white p-5">
-          <p class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Revenue</p>
-          <p id="kpiRevenue" class="mt-3 text-2xl font-semibold text-slate-900">$0</p>
-        </div>
-        <div class="card-shadow border border-slate-900 bg-white p-5">
-          <p class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Cost of Goods</p>
-          <p id="kpiCogs" class="mt-3 text-2xl font-semibold text-slate-900">$0</p>
-        </div>
-        <div class="card-shadow border border-slate-900 bg-white p-5">
-          <p class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Gross Margin</p>
-          <p id="kpiMargin" class="mt-3 text-2xl font-semibold text-slate-900">$0</p>
-        </div>
-        <div class="card-shadow border border-slate-900 bg-white p-5">
-          <p class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Margin %</p>
-          <p id="kpiMarginPct" class="mt-3 text-2xl font-semibold text-teal-600">0%</p>
-        </div>
-        <div class="card-shadow border border-slate-900 bg-white p-5">
-          <p class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Leakage</p>
-          <p id="kpiLeakage" class="mt-3 text-2xl font-semibold text-red-600">$0</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="mx-auto max-w-6xl px-6 pt-14">
-      <div class="grid gap-8 lg:grid-cols-2">
-        <div class="card-shadow border border-slate-900 bg-white p-6">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-slate-900">Customers Driving Leakage</h2>
-            <span class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Finance Watchlist</span>
-          </div>
-          <table class="mt-6 w-full text-sm">
-            <thead class="text-left text-xs uppercase tracking-[0.3em] text-slate-400">
-              <tr>
-                <th class="pb-2">Customer</th>
-                <th class="pb-2 text-right">Leakage</th>
-                <th class="pb-2 text-right">Revenue</th>
-              </tr>
-            </thead>
-            <tbody id="worstCustomersBody" class="divide-y divide-slate-200 text-sm text-slate-600"></tbody>
-          </table>
-        </div>
-        <div class="card-shadow border border-slate-900 bg-white p-6">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg font-semibold text-slate-900">SKUs &amp; CPT Codes Off-Target</h2>
-            <span class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Sales Ops Focus</span>
-          </div>
-          <table class="mt-6 w-full text-sm">
-            <thead class="text-left text-xs uppercase tracking-[0.3em] text-slate-400">
-              <tr>
-                <th class="pb-2">SKU / CPT</th>
-                <th class="pb-2 text-right">Leakage</th>
-                <th class="pb-2 text-right">Revenue</th>
-              </tr>
-            </thead>
-            <tbody id="worstSkusBody" class="divide-y divide-slate-200 text-sm text-slate-600"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section class="mx-auto max-w-6xl px-6 py-16">
-      <div class="card-shadow border border-slate-900 bg-white p-6">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <h2 class="text-lg font-semibold text-slate-900">Gross Margin Trend</h2>
-          <span class="text-[10px] uppercase tracking-[0.4em] text-slate-500">Rolling Realization %</span>
-        </div>
-        <div class="mt-6">
-          <canvas id="marginChart" height="120"></canvas>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="relative z-20 border-t border-slate-900 bg-white py-8">
-    <div class="mx-auto flex max-w-6xl flex-col gap-4 px-6 text-[10px] uppercase tracking-[0.35em] text-slate-500 md:flex-row md:items-center md:justify-between">
-      <span>© <span id="footerYear"></span> MarginMap. Precision financial intelligence for healthcare suppliers.</span>
-      <a href="/upload.html" class="text-slate-600 transition hover:text-slate-900">Upload new data</a>
-    </div>
-  </footer>
-
-  <script>
-    document.getElementById('footerYear').textContent = new Date().getFullYear();
-  </script>
-  <script src="/js/common.js"></script>
-  <script src="/js/dashboard.js"></script>
 </body>
 </html>

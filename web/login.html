@@ -2,31 +2,293 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>MarginMap Login</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+  <title>Login - MarginMap</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .login-container {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 48px;
+      width: 100%;
+      max-width: 440px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .logo-text {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #1a1a2e;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      margin-bottom: 32px;
+      font-size: 15px;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1a1a2e;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .demo-creds {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 24px;
+      font-size: 14px;
+    }
+
+    .demo-creds strong {
+      color: #0369a1;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .demo-creds code {
+      background: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      color: #1e40af;
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .back-link a {
+      color: #0ea5e9;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .back-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
-<body data-page="login" class="bg-slate-100 min-h-screen flex items-center justify-center">
-  <div class="bg-white shadow-xl border border-slate-200 rounded-2xl p-10 w-full max-w-md">
-    <div class="text-center mb-8">
-      <h1 class="text-3xl font-semibold text-slate-900">MarginMap</h1>
-      <p class="text-sm text-slate-500 mt-2">Commercial margin intelligence for healthcare suppliers</p>
+<body>
+  <div class="login-container">
+    <div class="logo">
+      <div class="logo-icon">📊</div>
+      <div class="logo-text">MarginMap</div>
     </div>
-    <form id="loginForm" class="space-y-6">
-      <div>
-        <label class="block text-sm font-medium text-slate-600">Email</label>
-        <input type="email" id="email" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-teal-500 focus:ring-teal-500" placeholder="admin@marginmap.local">
+
+    <h1>Welcome Back</h1>
+    <p class="subtitle">Login to access your profit intelligence dashboard</p>
+
+    <div id="error" class="error"></div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          placeholder="you@company.com"
+          autocomplete="email"
+        >
       </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-600">Password</label>
-        <input type="password" id="password" required class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 focus:border-teal-500 focus:ring-teal-500" placeholder="Margin123!">
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          placeholder="Enter your password"
+          autocomplete="current-password"
+        >
       </div>
-      <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 rounded-lg transition">Sign In</button>
-      <p id="loginError" class="hidden text-sm text-red-600 text-center"></p>
+
+      <button type="submit" class="btn" id="login-btn">
+        Sign In
+      </button>
     </form>
+
+    <div class="demo-creds">
+      <strong>Demo Credentials:</strong>
+      Email: <code>analyst@marginmap.io</code><br>
+      Password: <code>demo123</code>
+    </div>
+
+    <div class="back-link">
+      <a href="/">← Back to Home</a>
+    </div>
   </div>
-  <script src="/js/common.js"></script>
-  <script src="/js/login.js"></script>
+
+  <script type="module">
+    const form = document.getElementById('login-form');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const loginBtn = document.getElementById('login-btn');
+    const errorDiv = document.getElementById('error');
+
+    function showError(message) {
+      errorDiv.textContent = message;
+      errorDiv.classList.add('show');
+    }
+
+    function hideError() {
+      errorDiv.classList.remove('show');
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!email || !password) {
+        showError('Please enter both email and password');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in...';
+
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Login failed');
+        }
+
+        // Success - redirect to dashboard
+        window.location.href = '/dashboard.html';
+
+      } catch (error) {
+        showError(error.message);
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In';
+      }
+    });
+
+    // Auto-fill demo credentials on page load for demo purposes
+    if (window.location.search.includes('demo')) {
+      emailInput.value = 'analyst@marginmap.io';
+      passwordInput.value = 'demo123';
+    }
+  </script>
 </body>
 </html>

@@ -1,80 +1,56 @@
-const express = require('express');
-const { all, run } = require('../db');
-const { generateRecommendations } = require('../services/analyticsService');
+import express from 'express';
+import { saveRecommendations, getActiveRecommendations } from '../services/recommendationService.js';
+import db from '../db/index.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res, next) => {
+// Get all active recommendations
+router.get('/', (req, res) => {
   try {
-    const status = req.query.status || 'open';
-    let rows;
-    if (status === 'all') {
-      rows = await all('SELECT * FROM recommendations ORDER BY dollar_impact DESC, created_at DESC');
-    } else {
-      rows = await all(
-        'SELECT * FROM recommendations WHERE status = ? ORDER BY dollar_impact DESC, created_at DESC',
-        [status]
-      );
-    }
-    const data = rows.map((row) => ({
-      ...row,
-      dollar_impact: Number(row.dollar_impact || 0)
-    }));
-    res.json({ data });
-  } catch (err) {
-    next(err);
+    const recommendations = getActiveRecommendations();
+    res.json({ recommendations });
+  } catch (error) {
+    console.error('Recommendations error:', error);
+    res.status(500).json({ error: 'Failed to fetch recommendations' });
   }
 });
 
-router.post('/generate', async (req, res, next) => {
+// Generate new recommendations
+router.post('/generate', (req, res) => {
   try {
-    const created = await generateRecommendations();
-    res.status(201).json({ created, count: created.length });
-  } catch (err) {
-    next(err);
+    const recommendations = saveRecommendations();
+    res.json({
+      success: true,
+      count: recommendations.length,
+      recommendations
+    });
+  } catch (error) {
+    console.error('Generate recommendations error:', error);
+    res.status(500).json({ error: 'Failed to generate recommendations' });
   }
 });
 
-router.patch('/:id', async (req, res, next) => {
+// Update recommendation status
+router.patch('/:id', (req, res) => {
   try {
+    const { id } = req.params;
     const { status } = req.body;
-    const allowed = ['open', 'snoozed', 'resolved'];
-    if (!allowed.includes(status)) {
+
+    if (!['open', 'completed', 'dismissed'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
     }
-    const result = await run(
-      'UPDATE recommendations SET status = ?, updated_at = datetime("now") WHERE id = ?',
-      [status, req.params.id]
-    );
-    if (result.changes === 0) {
-      return res.status(404).json({ error: 'Recommendation not found' });
-    }
-    res.json({ id: Number(req.params.id), status });
-  } catch (err) {
-    next(err);
+
+    db.prepare(`
+      UPDATE recommendations
+      SET status = ?, resolved_at = CURRENT_TIMESTAMP, resolved_by = ?
+      WHERE id = ?
+    `).run(status, req.session.userId, id);
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Update recommendation error:', error);
+    res.status(500).json({ error: 'Failed to update recommendation' });
   }
 });
 
-router.get('/export/csv', async (req, res, next) => {
-  try {
-    const rows = await all('SELECT * FROM recommendations ORDER BY created_at DESC');
-    const headers = ['id', 'category', 'issue_text', 'suggested_action', 'dollar_impact', 'status', 'created_at', 'updated_at'];
-    const csvLines = [headers.join(',')];
-    rows.forEach((row) => {
-      const line = headers
-        .map((header) => {
-          const value = row[header] ?? '';
-          return `"${String(value).replace(/"/g, '""')}"`;
-        })
-        .join(',');
-      csvLines.push(line);
-    });
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="marginmap_recommendations.csv"');
-    res.send(csvLines.join('\n'));
-  } catch (err) {
-    next(err);
-  }
-});
-
-module.exports = router;
+export default router;

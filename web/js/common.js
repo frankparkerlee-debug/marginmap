@@ -1,77 +1,167 @@
-const API_BASE = '/api';
-const DEFAULT_COMPANY_NAME = window.COMPANY_NAME || (localStorage.getItem('mm_company') || 'Evergreen Wound Supply');
+/**
+ * Common utilities and shared functions for MarginMap frontend
+ */
 
-const MM = {
-  getToken() {
-    return localStorage.getItem('mm_token');
-  },
-  requireAuth() {
-    // Authentication temporarily disabled; no-op.
-  },
-  async apiFetch(path, options = {}) {
-    const opts = { ...options };
-    opts.headers = opts.headers ? { ...opts.headers } : {};
+// Format currency
+export function formatCurrency(value) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(value);
+}
 
-    const token = MM.getToken();
-    if (token) {
-      opts.headers.Authorization = `Bearer ${token}`;
-    }
+// Format percentage
+export function formatPercent(value, decimals = 1) {
+  return `${value.toFixed(decimals)}%`;
+}
 
-    if (opts.body && !(opts.body instanceof FormData)) {
-      opts.headers['Content-Type'] = opts.headers['Content-Type'] || 'application/json';
-      if (typeof opts.body !== 'string') {
-        opts.body = JSON.stringify(opts.body);
-      }
-    }
+// Format number with commas
+export function formatNumber(value) {
+  return new Intl.NumberFormat('en-US').format(Math.round(value));
+}
 
-    const response = await fetch(`${API_BASE}${path}`, opts);
-    if (response.status === 401) {
-      localStorage.removeItem('mm_token');
-      window.location.href = '/login.html';
-      return Promise.reject(new Error('Unauthorized'));
-    }
-
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || 'Request failed');
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return response.json();
-    }
-    return response.text();
-  },
-  formatCurrency(value) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value || 0);
-  },
-  formatPercent(value) {
-    return `${(value * 100).toFixed(1)}%`;
-  },
-  initLayout() {
-    const pageKey = document.body.dataset.page;
-    const navLinks = document.querySelectorAll('[data-nav]');
-    navLinks.forEach((link) => {
-      if (link.dataset.nav === pageKey) {
-        link.classList.add('border-slate-900', 'text-slate-900');
-        link.classList.remove('text-slate-500');
-      } else {
-        link.classList.remove('border-slate-900', 'text-slate-900');
-        link.classList.add('text-slate-500');
+// API call wrapper
+export async function apiCall(endpoint, options = {}) {
+  try {
+    const response = await fetch(endpoint, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
       }
     });
 
-    const companyNameEl = document.getElementById('companyName');
-    if (companyNameEl) {
-      companyNameEl.textContent = DEFAULT_COMPANY_NAME;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Request failed');
     }
-  }
-};
 
-window.MM = MM;
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (document.body.dataset.page && document.body.dataset.page !== 'login') {
-    MM.initLayout();
+    return await response.json();
+  } catch (error) {
+    console.error('API call failed:', error);
+    throw error;
   }
-});
+}
+
+// Show toast notification
+export function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+
+  const container = document.getElementById('toast-container');
+  if (container) {
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add('fade-out');
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+}
+
+// Logout function
+export async function logout() {
+  try {
+    await apiCall('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  } catch (error) {
+    console.error('Logout failed:', error);
+  }
+}
+
+// Check authentication
+export async function checkAuth() {
+  try {
+    const data = await apiCall('/api/auth/me');
+    return data.user;
+  } catch (error) {
+    window.location.href = '/login.html';
+    return null;
+  }
+}
+
+// Animate number counter
+export function animateNumber(element, start, end, duration = 1000) {
+  const range = end - start;
+  const increment = range / (duration / 16);
+  let current = start;
+
+  const timer = setInterval(() => {
+    current += increment;
+    if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+      current = end;
+      clearInterval(timer);
+    }
+    element.textContent = Math.round(current);
+  }, 16);
+}
+
+// Get margin status
+export function getMarginStatus(marginPercent, target = 55) {
+  if (marginPercent >= target + 10) return 'excellent';
+  if (marginPercent >= target) return 'good';
+  if (marginPercent >= target - 10) return 'warning';
+  return 'critical';
+}
+
+// Get priority badge
+export function getPriorityBadge(priority) {
+  const badges = {
+    high: '<span class="badge badge-high">High</span>',
+    medium: '<span class="badge badge-medium">Medium</span>',
+    low: '<span class="badge badge-low">Low</span>'
+  };
+  return badges[priority] || badges.medium;
+}
+
+// Get category icon
+export function getCategoryIcon(category) {
+  const icons = {
+    pricing: '💰',
+    discount: '🏷️',
+    returns: '↩️',
+    customer_pricing: '🤝',
+    customer: '👥',
+    leakage: '💧',
+    region: '🌎'
+  };
+  return icons[category] || '📊';
+}
+
+// Initialize navigation
+export function initNavigation() {
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      logout();
+    });
+  }
+
+  // Highlight current page in navigation
+  const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    if (link.getAttribute('href') === currentPage) {
+      link.classList.add('active');
+    }
+  });
+}
+
+// Loading state
+export function showLoading(containerId) {
+  const container = document.getElementById(containerId);
+  if (container) {
+    container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+  }
+}
+
+export function hideLoading(containerId) {
+  const container = document.getElementById(containerId);
+  if (container) {
+    const loading = container.querySelector('.loading');
+    if (loading) loading.remove();
+  }
+}

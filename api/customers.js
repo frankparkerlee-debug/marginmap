@@ -1,31 +1,34 @@
-const express = require('express');
-const dayjs = require('dayjs');
-const { listCustomerSummary, customerProfitability } = require('../services/analyticsService');
+import express from 'express';
+import { getAllCustomers, customerProfitability } from '../services/analyticsService.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res, next) => {
+// Get all customers with profitability metrics
+router.get('/', (req, res) => {
   try {
-    const start = req.query.start || dayjs().subtract(90, 'day').format('YYYY-MM-DD');
-    const end = req.query.end || dayjs().format('YYYY-MM-DD');
-    const data = await listCustomerSummary({ start, end });
-    res.json({ data, range: { start, end } });
-  } catch (err) {
-    next(err);
+    const customers = getAllCustomers();
+    res.json({ customers });
+  } catch (error) {
+    console.error('Customer list error:', error);
+    res.status(500).json({ error: 'Failed to fetch customer data' });
   }
 });
 
-router.get('/:customerName', async (req, res, next) => {
+// Get specific customer details
+router.get('/:customerName', (req, res) => {
   try {
-    const customerName = decodeURIComponent(req.params.customerName);
-    const detail = await customerProfitability(customerName);
-    if (!detail) {
+    const { customerName } = req.params;
+    const data = customerProfitability(decodeURIComponent(customerName));
+
+    if (!data) {
       return res.status(404).json({ error: 'Customer not found' });
     }
-    res.json(detail);
-  } catch (err) {
-    next(err);
+
+    res.json(data);
+  } catch (error) {
+    console.error('Customer detail error:', error);
+    res.status(500).json({ error: 'Failed to fetch customer details' });
   }
 });
 
-module.exports = router;
+export default router;

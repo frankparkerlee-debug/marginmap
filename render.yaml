@@ -1,17 +1,21 @@
 services:
   - type: web
-    name: marginmap1
+    name: marginmap
     env: node
-    plan: starter
-    branch: main
-    buildCommand: "npm install"
-    startCommand: "npm run start:render"
-    disk:
-      name: marginmap-data
-      mountPath: /var/data
-      sizeGB: 1
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run migrate && npm run seed
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: SQLITE_FILE
-        value: /var/data/marginmap.db
+      - key: PORT
+        value: 3000
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_PATH
+        value: ./data/marginmap.db
+      - key: UPLOAD_DIR
+        value: ./storage/uploads
+      - key: TARGET_MARGIN_PERCENT
+        value: 55
